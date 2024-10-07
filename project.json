@@ -1,0 +1,22 @@
+{
+  "langrev": "0.6.2",
+  "warnings": [ "no-unused" ],
+  "dependency-search-paths": [ "lib" ],
+  "dependencies": [ ],
+  "authors": [ "lemonbrass <shebangsache@gmail.com>" ],
+  "version": "0.1.0",
+  "sources": [ "src/**" ],
+  "output": "build",
+
+  "targets": {
+    "creamdeb": {
+      "type": "executable",
+      "opt": "O0",
+    },
+    "creamrel": {
+      "type": "executable",
+      "opt": "O5",
+    }
+  },
+  "cpu": "generic",
+}
