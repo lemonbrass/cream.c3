@@ -101,18 +101,17 @@ fn ArgLike*! match_argt(String name, ArgLike*[] argtypes){
 
 fn String[]! parse_cparams(int id, String[] args, ArgLike* argtype, ArgLike*[] argtypes) {
   List(<String>) strs;
-  usz act_num = 0;
+  usz act_num = args.len - id;
   int numargs = argtype.num_param;
   bool is_any = numargs == ANY_PARAMS;
   foreach (i, arg : args[id..]){
     if (!is_any && i > numargs) break;
     if (contains(argtypes, arg)) break;
     strs.push(arg);
-    act_num = i;
   }
   String[] str_params = strs.to_new_array();
   strs.free();
-  if (!is_any && (act_num+1) != numargs) {
+  if (!is_any && act_num != numargs) {
     io::printfn("Error: expected <_%d_> args, got <_%d_>", 
                                           argtype.num_param, act_num);
     return ParseError.INVALID_NO_OF_PARAMS?;
@@ -146,6 +145,7 @@ fn int! parse_single(int id, String[] args, ArgLike*[] argtypes){
         argtype.params = params;
         argtype.count++;
         argtype.callback(argtype)!;
+        ret = 1 + argtype.params.len;
     }
   }
   return ret;
