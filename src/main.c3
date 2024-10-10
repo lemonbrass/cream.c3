@@ -21,15 +21,18 @@ fn void! onprint(ArgLike* print) {
 fn int main(String[] args)
 {
   ArgLike help = arga::make_arg_opt("help", "display help", &onhelp);
-  ArgLike banana = arga::make_arg_param("banana", 
-                    "get <n> bananas", 1, &onbanana);
-  ArgLike print = arga::make_arg_param("print", 
-   "print a list of a,b,c.", arga::ANY_PARAMS, &onprint);
+  ArgLike banana = arga::make_arg_cparam("banana", 
+                                     "get <n> bananas", 1, &onbanana);
+  ArgLike print = arga::make_arg_cparam("print", 
+                 "print a list of a,b,c.", arga::ANY_PARAMS, &onprint);
 
   ArgLike*[] list = { &help, &banana, &print };
   if (catch err = arga::argparse(args, list)){
     io::printfn("An error ocurred %s, halting", err);
     return 1;
+  }
+  foreach (arg : list) {
+    if (arg.params.ptr != null) free(arg.params.ptr);
   }
   return 0;
 }
