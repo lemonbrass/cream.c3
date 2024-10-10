@@ -1,6 +1,12 @@
 module arga;
 import std::io;
+import std::collections;
 import std::core::mem;
+
+
+def Callback = fn void!(ArgLike*);
+const int ANY_PARAMS = -1; // any no. of parameters
+
 
 enum ArgT {
   OPT,
@@ -10,9 +16,10 @@ enum ArgT {
 struct ArgLike {
   String name;
   String desc;
-  DString[] params;
+  String[] params;
   int num_param;
   int count;
+  Callback callback;
   ArgT type;
 }
 
@@ -21,50 +28,46 @@ fault ParseError {
   INVALID_NO_OF_PARAMS
 }
 
-fn ArgLike make_arg_opt(String name, String desc){
+fn void! empty_fn(ArgLike* al) { }
+
+fn ArgLike make_arg_opt(String name, String desc, Callback cback = &empty_fn){
   ArgLike like;
   like.type = OPT;
   like.count = 0;
   like.num_param = 0;
   like.name = name;
   like.desc = desc;
+  like.callback = cback;
   return like;
 }
 
-fn ArgLike make_arg_param(String name, String desc, int no_args){
+fn ArgLike make_arg_param(String name, String desc, int no_args, Callback cback = &empty_fn){
   ArgLike like;
   like.type = PARAM;
   like.count = 0;
   like.name = name;
   like.desc = desc;
+  like.callback = cback;
   like.num_param = no_args;
   return like;
 }
 
 fn void! argparse(String[] args, ArgLike*[] argtypes){
   for (int i=0; i < args.len;){
-    int! ret = parse_single(i, args, argtypes);
-    if (catch err = ret) return err?;
+    int ret = parse_single(i, args, argtypes)!;
     i += ret;
   }
 }
 
-fn DString[]! parse_params(int id, String[] args, ArgLike* argtype){
-  DString* str = malloc(DString.sizeof * argtype.num_param);
-  int i = 0;
-  foreach(ch : args[id]){
-    if (i+1 > argtype.num_param) break;
-    if (ch == ',') {
-      i++;
-      continue;
-    }
-    str[i].appendf("%c", ch);
-  }
-  if ((i+1) != argtype.num_param){
-    io::printfn("Error: expected < %d > args, got < %d >", argtype.num_param, i+1);
+fn String[]! parse_params(int id, String[] args, ArgLike* argtype){
+  int numargs = argtype.num_param;
+  String[] str = args[id].split(",");
+  int i = str.len;
+  if (ANY_PARAMS != numargs && i != numargs){
+    io::printfn("Error: expected <_%d_> args, got <_%d_>", argtype.num_param, i);
     return ParseError.INVALID_NO_OF_PARAMS?;
   }
-  return str[0..argtype.num_param];
+  return str;
 }
 
 fn int! parse_single(int id, String[] args, ArgLike*[] argtypes){
@@ -74,13 +77,14 @@ fn int! parse_single(int id, String[] args, ArgLike*[] argtypes){
     switch (argtype.type){
       case OPT:
         argtype.count++;
+        argtype.callback(argtype)!;
         ret = 1;
       case PARAM:
         if (args.len <= id+1) return ParseError.NOT_ENOUGH_ARGUMENTS?;
-        DString[]! params = parse_params(id + 1, args, argtype);
-        if (catch err = params) return err?;
-        argtype.params = params;
+        String[]! params = parse_params(id + 1, args, argtype);
+        argtype.params = params!;
         argtype.count++;
+        argtype.callback(argtype)!;
         ret = 2;
     }
   }
