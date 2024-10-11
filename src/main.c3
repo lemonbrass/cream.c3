@@ -17,11 +17,19 @@ fn int main(String[] args)
   }
 
   arga::free_args(list);
-  TomlFile f = toml::parse_toml("[project]\nname=haha\n#hahahahahah\nversion=0.0.1\nauthor=banana\n[wingardium]\n levioussa=true\n")!!;
+  TomlFile f = toml::parse_toml(readfile("cream.toml"))!!;
   foreach(s : f.sections){
-    io::printn(s.name);
+    io::printfn("\n%s\n", s.name);
     foreach(fi : s.fields) io::printfn("%s : %s", fi.key, fi.val);
   }
   return 0;
 }
 
+fn String! readfile(String file){
+  usz size = file::get_size(file)!;
+  char* ptr = malloc((size+4) * char.sizeof);
+  char[] buff = ptr[0..size+4];
+  File f = file::open(file, "r")!;
+  f.read(buff)!;
+  return (String)buff;
+}

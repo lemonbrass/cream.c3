@@ -1,0 +1,27 @@
+[project]
+name = "yooo"
+version = 0.1
+data = "ahaaaaa"
+author = "lemonbrass"
+deps = ["ncurses", "notcurses", "libicu"]
+ext_repos = ["lemonbrass/arga", "someguy/somerepo"]
+
+[subproject]
+names = ["tomlparser", "argumentparser"]
+
+[subproject.tomlparser]
+src = "toml/src/"
+bin = "toml/bin/"
+
+[subproject.argumentparser]
+src = "somedir"
+
+[extproject.arga]
+src = "--/src/" #  --/ stands for external project clone dir
+includes = ["--/arga.c3"]
+
+[target]
+flags = "-l ncurses"
+
+[target.release]
+flags = "-O5 -Oz"

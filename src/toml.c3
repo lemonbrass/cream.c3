@@ -124,7 +124,7 @@ fn TomlSection! parse_section(StringStream* data) {
     if (data.data.len <= data.id) break;
     TomlField! f = parse_field(data);
     if (catch f) break;
-    fields.push(f);
+    if (f.key != "") fields.push(f);
   }
 
   TomlSection sec;
@@ -149,8 +149,11 @@ fn TomlField! parse_field(StringStream* data) {
   }
   data.id++;
   data.remove_whitespace();
-
   while (data.data.len > data.id && data.curr() != '\n') {
+    if (data.curr() == '#') {
+      data.remove_whitespace();
+      break;
+    }
     value.append_char(data.curr());
     data.id++;
   }
