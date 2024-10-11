@@ -43,6 +43,12 @@ fn ArgLike make_arg_opt(String name, String desc, Callback cback = &empty_fn){
   return like;
 }
 
+fn void free_args(ArgLike*[] list){
+  foreach (arg : list) {
+    if (arg.params.ptr != null) free(arg.params);
+  }
+}
+
 fn ArgLike make_arg_cparam(String name, String desc, int no_args, Callback cback = &empty_fn){
   ArgLike like;
   like.type = CPARAM;

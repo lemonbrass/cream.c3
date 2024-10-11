@@ -1,39 +1,21 @@
 module test;
 import std::io;
+import projutil;
 import arga;
 
-fn void! onbanana(ArgLike* banana) {
-  io::printfn("I'm gonna stick %s bananas in.", banana.params[0]);
-}
 
-fn void! onhelp(ArgLike* help){
-  io::printn("No help for you");
-}
-
-fn void! onprint(ArgLike* print) {
-  io::print("{ ");
-  foreach (element : print.params){
-    io::printf("%s, ", element);
-  }
-  io::printn(" }");
-}
 
 fn int main(String[] args)
 {
-  ArgLike help = arga::make_arg_opt("help", "display help", &onhelp);
-  ArgLike banana = arga::make_arg_cparam("banana", 
-                                     "get <n> bananas", 1, &onbanana);
-  ArgLike print = arga::make_arg_cparam("print", 
-                 "print a list of a,b,c.", arga::ANY_PARAMS, &onprint);
+  ArgLike create_project = arga::make_arg_opt("create", "Make project", &projutil::create_proj);
+  ArgLike*[] list = { &create_project };
 
-  ArgLike*[] list = { &help, &banana, &print };
   if (catch err = arga::argparse(args, list)){
     io::printfn("An error ocurred %s, halting", err);
     return 1;
   }
-  foreach (arg : list) {
-    if (arg.params.ptr != null) free(arg.params.ptr);
-  }
+
+  arga::free_args(list);
   return 0;
 }
 
