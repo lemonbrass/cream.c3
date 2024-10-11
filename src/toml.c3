@@ -47,8 +47,17 @@ fn char StringStream.curr(&self) {
 }
 
 fn void StringStream.remove_whitespace(&self) {
-  while (self.data.len > self.id && (self.curr() == ' ' || self.curr() == '\t' || self.curr() == '\n')) {
-    self.id++;
+  while (self.data.len > self.id) {
+    char ch = self.curr();
+    if (ch == ' ' || ch == '\t' || ch == '\n') {
+      self.id++;
+    } else if (ch == '#') {
+      while (self.curr() != '\n' && self.data.len > self.id) {
+        self.id++;
+      }
+    } else {
+      break;
+    }
   }
 }
 
@@ -112,6 +121,7 @@ fn TomlSection! parse_section(StringStream* data) {
 
   while (data.data.len > data.id && data.curr() != '[') {
     data.remove_whitespace();
+    if (data.data.len <= data.id) break;
     TomlField! f = parse_field(data);
     if (catch f) break;
     fields.push(f);
@@ -130,7 +140,7 @@ fn TomlField! parse_field(StringStream* data) {
   DString value;
   defer name.free();
   defer value.free();
-  
+
   while (data.data.len > data.id && data.curr() != '=') {
     name.append_char(data.curr());
     data.id++;
@@ -139,7 +149,7 @@ fn TomlField! parse_field(StringStream* data) {
   }
   data.id++;
   data.remove_whitespace();
-  
+
   while (data.data.len > data.id && data.curr() != '\n') {
     value.append_char(data.curr());
     data.id++;

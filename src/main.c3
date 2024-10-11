@@ -17,7 +17,7 @@ fn int main(String[] args)
   }
 
   arga::free_args(list);
-  TomlFile f = toml::parse_toml("[project]\nname=haha\nversion=0.0.1\nauthor=banana\n[wingardium]\n levioussa=true\n")!!;
+  TomlFile f = toml::parse_toml("[project]\nname=haha\n#hahahahahah\nversion=0.0.1\nauthor=banana\n[wingardium]\n levioussa=true\n")!!;
   foreach(s : f.sections){
     io::printn(s.name);
     foreach(fi : s.fields) io::printfn("%s : %s", fi.key, fi.val);
