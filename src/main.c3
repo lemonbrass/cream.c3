@@ -20,7 +20,7 @@ fn int main(String[] args)
   TomlFile f = toml::parse_toml(readfile("cream.toml"))!!;
   foreach(s : f.sections){
     io::printfn("\n%s\n", s.name);
-    foreach(fi : s.fields) io::printfn("%s : %s", fi.key, fi.val);
+    foreach(fi : s.fields) io::printfn("%s : %s\n", fi.key, fi.val);
   }
   return 0;
 }

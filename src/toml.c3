@@ -34,8 +34,14 @@ fault TomlError {
   INTERNAL
 }
 
-fn char StringStream.get(&self, int id) @operator([]) {
-  if (id < 0) return self.data[self.id];
+fn bool StringStream.is_whitespace(&self) {
+  if (self.curr() == '\n' || self.curr() == ' ' || self.curr() == '\t') return true;
+  return false;
+}
+
+fn bool StringStream.is_multistr(&data) => (data.id+2 < data.data.len && (data.data[data.id..data.id+2] == "\"\"\""));
+
+fn char StringStream.get(&self, usz id) @operator([]) {
   return self.data[id];
 }
 
@@ -46,13 +52,15 @@ fn char StringStream.curr(&self) {
   return '\0';
 }
 
+fn bool StringStream.is_ok(&self) => self.data.len > self.id;
+
 fn void StringStream.remove_whitespace(&self) {
-  while (self.data.len > self.id) {
+  while (self.is_ok()) {
     char ch = self.curr();
-    if (ch == ' ' || ch == '\t' || ch == '\n') {
+    if (self.is_whitespace()) {
       self.id++;
     } else if (ch == '#') {
-      while (self.curr() != '\n' && self.data.len > self.id) {
+      while (self.curr() != '\n' && self.is_ok()) {
         self.id++;
       }
     } else {
@@ -92,7 +100,7 @@ fn TomlFile! parse_toml(String data) {
   FieldList global_fields;
   defer sections.free();
   defer global_fields.free();
-  while (sstream.data.len >= sstream.id) {
+  while (sstream.is_ok()) {
     sstream.remove_whitespace();
     try_parse(&sstream, &sections, &global_fields)!;
   }
@@ -119,9 +127,9 @@ fn TomlSection! parse_section(StringStream* data) {
   }
   data.id++;
 
-  while (data.data.len > data.id && data.curr() != '[') {
+  while (data.is_ok() && data.curr() != '[') {
     data.remove_whitespace();
-    if (data.data.len <= data.id) break;
+    if (!data.is_ok()) break;
     TomlField! f = parse_field(data);
     if (catch f) break;
     if (f.key != "") fields.push(f);
@@ -141,7 +149,7 @@ fn TomlField! parse_field(StringStream* data) {
   defer name.free();
   defer value.free();
 
-  while (data.data.len > data.id && data.curr() != '=') {
+  while (data.is_ok() && data.curr() != '=') {
     name.append_char(data.curr());
     data.id++;
     if (data.curr() == '=') break;
@@ -149,17 +157,45 @@ fn TomlField! parse_field(StringStream* data) {
   }
   data.id++;
   data.remove_whitespace();
-  while (data.data.len > data.id && data.curr() != '\n') {
-    if (data.curr() == '#') {
-      data.remove_whitespace();
-      break;
-    }
-    value.append_char(data.curr());
-    data.id++;
-  }
+  parse_field_value(&value, data);
   f.key = name.copy_str();
   f.val = value.copy_str();
   return f;
+}
+
+fn void parse_field_value(DString* value, StringStream* data) {
+  data.remove_whitespace();
+  bool is_str = data.curr() == '"';
+  bool is_multistr = data.is_multistr();
+  if (is_str && !is_multistr) data.id++;
+
+  while (is_str && !is_multistr) {
+    value.append_char(data.curr());
+    data.id++;
+    if (data.curr() == '\n') return; // ERROR
+    if (data.curr() == '"') {
+      data.id++;
+      data.remove_whitespace();
+      return;
+    }
+  }
+
+  if (is_multistr) data.id+=3;
+
+  while (data.is_ok() && is_multistr) {
+    value.append_char(data.curr());
+    data.id++;
+    if (data.is_ok() && data.curr() == '"') {
+      data.id += 3;
+      return;
+    }
+  }
+
+  while (data.is_ok() && !is_multistr && !is_str) {
+    value.append_char(data.curr());
+    data.id++;
+    if (data.curr() == '\n') return;
+  }
 }
 
 fn String! get_val(TomlFile* file, String secname, String keyaddr) {

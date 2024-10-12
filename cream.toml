@@ -5,6 +5,11 @@ data = "ahaaaaa"
 author = "lemonbrass"
 deps = ["ncurses", "notcurses", "libicu"]
 ext_repos = ["lemonbrass/arga", "someguy/somerepo"]
+description = """
+  YOO! This is my..
+  Test Project...
+  Hahahahahaha
+"""
 
 [subproject]
 names = ["tomlparser", "argumentparser"]
