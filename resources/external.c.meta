@@ -1,0 +1,14 @@
+[external.c.%s]
+url = %s
+git_flags = %s
+build_cmd = %s
+commit_id = %s
+flags = %s
+output = %s
+# libs to use, eg - --/bin/libmylib.a
+use = %s
+# whether to link or not
+link = %s
+
+# --/ means the external project clone directory
+
