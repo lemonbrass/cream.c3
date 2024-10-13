@@ -6,12 +6,12 @@ def SectionList = List(<TomlSection>);
 def FieldList = List(<TomlField>);
 
 struct TomlField {
-  String val;
-  String key;
+  DString val;
+  DString key;
 }
 
 struct TomlSection {
-  String    name;
+  DString    name;
   FieldList fields;
 }
 
@@ -75,50 +75,45 @@ fn void StringStream.remove_whitespace(&self) {
 
 fn TomlSection! find_section(TomlFile* file, String name) {
   foreach (sec : file.sections) {
-    if (sec.name == name) return sec;
+    if (sec.name.str_view() == name) return sec;
   }
   return TomlError.SECTION_NOT_FOUND?;
 }
 
 
-fn String! find_val_from_sec(TomlSection* sec, String key) {
+fn DString! find_val_from_sec(TomlSection* sec, String key) {
   foreach (field : sec.fields) {
-    if (field.key == key) return field.val;
+    if (field.key.str_view() == key) return field.val;
   }
   return TomlError.KEY_NOT_FOUND?;
 }
 
 
-fn void! try_parse(StringStream* sstream, SectionList* section, FieldList* fields) {
+fn void! try_parse(StringStream* sstream, TomlFile* file) {
   sstream.remove_whitespace();
   if (sstream.curr() == '[') {
     sstream.id++;
-    section.push(parse_section(sstream)!);
+    file.sections.push(parse_section(file, sstream)!);
   } else {
-    fields.push(parse_field(sstream)!);
+    file.global.fields.push(parse_field(file, sstream)!);
   }
 }
 
 fn TomlFile! parse_toml(String data) {
   StringStream sstream = {data, 0};
   TomlFile file;
-  SectionList sections;
-  FieldList global_fields;
   while (sstream.is_ok()) {
     sstream.remove_whitespace();
-    try_parse(&sstream, &sections, &global_fields)!;
+    try_parse(&sstream, &file)!;
   }
-  file.sections = sections;
-  file.global.fields = global_fields;
   return file;
 }
 
 
 
-fn TomlSection! parse_section(StringStream* data) {
+fn TomlSection! parse_section(TomlFile* file, StringStream* data) {
   DString name;
   FieldList fields;
-  defer name.free();
   char ch = data.curr();
   data.remove_whitespace();
 
@@ -135,26 +130,24 @@ fn TomlSection! parse_section(StringStream* data) {
   while (data.is_ok() && data.curr() != '[') {
     data.remove_whitespace();
     if (!data.is_ok()) break;
-    TomlField! f = parse_field(data);
+    TomlField! f = parse_field(file, data);
     if (catch f) break;
-    if (f.key != "") fields.push(f);
+    if (f.key.str_view() != "") fields.push(f);
   }
 
   TomlSection sec;
-  sec.name = name.copy_str();
+  sec.name = name;
   sec.fields = fields;
   return sec;
 }
 
 
 
-fn TomlField! parse_field(StringStream* data) {
+fn TomlField! parse_field(TomlFile* file, StringStream* data) {
   if (data.curr() == '[') return TomlError.INTERNAL?;
   TomlField f;
   DString name;
   DString value;
-  defer name.free();
-  defer value.free();
 
   while (data.is_ok() && data.curr() != '=') {
     name.append_char(data.curr());
@@ -165,8 +158,8 @@ fn TomlField! parse_field(StringStream* data) {
   data.id++;
   data.remove_whitespace();
   parse_field_value(&value, data);
-  f.key = name.copy_str();
-  f.val = value.copy_str();
+  f.key = name;
+  f.val = value;
   return f;
 }
 
@@ -189,10 +182,7 @@ fn void parse_field_value(DString* value, StringStream* data) {
     }
   }
 
-
-
   if (is_multistr) data.id+=3;
-
   while (data.is_ok() && is_multistr) {
     value.append_char(data.curr());
     data.id++;
@@ -210,7 +200,7 @@ fn void parse_field_value(DString* value, StringStream* data) {
 }
 
 
-fn String! get_val(TomlFile* file, String secname, String keyaddr) {
+fn DString! get_val(TomlFile* file, String secname, String keyaddr) {
   if (secname == "") {
     return find_val_from_sec(&file.global, keyaddr);
   }
@@ -218,8 +208,15 @@ fn String! get_val(TomlFile* file, String secname, String keyaddr) {
   return find_val_from_sec(&section, keyaddr);
 }
 
+fn void TomlField.free(&self) {
+  self.val.free();
+  self.key.free();
+}
+
 fn void TomlSection.free(&self) {
+  foreach (f : self.fields) f.free();
   self.fields.free();
+  self.name.free();
 }
 
 fn void TomlFile.free(&self) {

@@ -18,16 +18,21 @@ fn int main(String[] args)
     return 1;
   }
 
-  TomlFile f = toml::parse_toml(readfile("cream.toml"))!!;
-  defer f.free();
-  print_toml(&f);
+  const String FILE = "cream.toml";
+  String contents = readfile(FILE)!!;
+  TomlFile f = toml::parse_toml(contents)!!;
   TomlBuilder b;
   defer b.free();
+  defer contents.free();
+  defer f.free();
+
+  print_toml(&f);
+  
   b.add_global("globalstuff", "\"ahahaha\"");
   b.add_section("project");
   b.get_section("project")!!
   .add_field("name", "\"idk\"")
-  .add_field("author", "\"Dickinson\"");
+  .add_field("author", "\"a man\"");
   io::printn(b.get_string());
   return 0;
 }

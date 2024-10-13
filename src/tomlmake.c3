@@ -13,7 +13,7 @@ fault TomlBuilderError {
 
 fn void TomlBuilder.add_section(&self, String name) {
   TomlSection sec;
-  sec.name = name;
+  sec.name.append_chars(name);
   self.sections.push(sec);
 }
 
@@ -26,16 +26,16 @@ fn void TomlBuilder.free(&self) {
 
 fn TomlSection* TomlSection.add_field(&self, String key, String val) {
   TomlField field;
-  field.key = key;
-  field.val = val;
+  field.key.append_chars(key);
+  field.val.append_chars(val);
   self.fields.push(field);
   return self;
 }
 
 fn void TomlBuilder.add_global(&self, String key, String val) {
   TomlField f;
-  f.key = key;
-  f.val = val;
+  f.key.append_chars(key);
+  f.val.append_chars(key);
   self.global.push(f);
 }
 
@@ -54,7 +54,7 @@ fn String TomlBuilder.get_string(&self) {
 
 fn TomlSection*! TomlBuilder.get_section(&self, String name) {
   foreach (&sec : self.sections) {
-    if (sec.name == name) return sec;
+    if (sec.name.str_view() == name) return sec;
   }
   return TomlBuilderError.SECTION_NOT_FOUND?;
 }
