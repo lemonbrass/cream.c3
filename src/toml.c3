@@ -4,6 +4,7 @@ import std::io;
 
 def SectionList = List(<TomlSection>);
 def FieldList = List(<TomlField>);
+def StreamLambda = fn void! (StringStream*);
 
 struct TomlField {
   DString val;
@@ -31,12 +32,21 @@ fault TomlError {
   KEY_NOT_FOUND,
   INVALID_SECTION,
   INVALID_FIELD,
+  UNEXPECTED_EOF,
   INTERNAL
 }
 
-fn bool StringStream.is_whitespace(&self) {
-  if (self.curr() == '\n' || self.curr() == ' ' || self.curr() == '\t') return true;
+fn bool char.is_whitespace(self) {
+  if (self == '\n' || self == ' ' || self == '\t') return true;
   return false;
+}
+
+fn bool String.is_empty(&self) {
+  return self.trim() == "";
+}
+
+fn bool StringStream.is_whitespace(&self) {
+  return self.curr().is_whitespace();
 }
 
 
@@ -55,10 +65,12 @@ fn char StringStream.curr(&self) {
   return '\0';
 }
 
-fn bool StringStream.is_ok(&self) => self.data.len > self.id;
+fn bool StringStream.is_ok(&self) {
+  return self.data.len > self.id && self.curr() != '\0';
+}
 
 fn void StringStream.remove_whitespace(&self) {
-  while (self.is_ok()) {
+  while (self.is_whitespace() || self.curr() == '#') {
     char ch = self.curr();
     if (self.is_whitespace()) {
       self.id++;
@@ -72,6 +84,12 @@ fn void StringStream.remove_whitespace(&self) {
   }
 }
 
+fn void TomlFile.print_toml(&f) {
+  foreach(s : f.sections){
+    io::printfn("\n%s\n", s.name);
+    foreach(fi : s.fields) io::printfn("%s : %s", fi.key, fi.val);
+  }
+}
 
 fn TomlSection! find_section(TomlFile* file, String name) {
   foreach (sec : file.sections) {
@@ -95,78 +113,84 @@ fn void! try_parse(StringStream* sstream, TomlFile* file) {
     sstream.id++;
     file.sections.push(parse_section(file, sstream)!);
   } else {
-    file.global.fields.push(parse_field(file, sstream)!);
+    TomlField! field = parse_field(file, sstream);
+    if (catch err = field) {
+      if (err == TomlError.INTERNAL) {
+        return;
+      }
+      return err?;
+    }
+    file.global.fields.push(field);
   }
 }
 
 fn TomlFile! parse_toml(String data) {
   StringStream sstream = {data, 0};
   TomlFile file;
-  while (sstream.is_ok()) {
+  @till_delim(sstream, '\0'; char ch){
     sstream.remove_whitespace();
     try_parse(&sstream, &file)!;
-  }
+    if (!sstream.is_ok()) return file;
+  };
   return file;
 }
 
+/**
+* 
+* @require $defined(sstream.curr()) && $defined(sstream.id)
+*
+**/
+macro @till_delim(sstream, delim; @body(curr)) {
+  while (sstream.curr() != delim) {
+    @body(sstream.curr());
+  }
+} 
 
 
 fn TomlSection! parse_section(TomlFile* file, StringStream* data) {
-  DString name;
-  FieldList fields;
-  char ch = data.curr();
+  TomlSection sec;
   data.remove_whitespace();
 
-  while (ch != ']') {
+  @till_delim(data, ']'; char curr) {
+    if (!curr.is_whitespace()) sec.name.append_char(curr);
     data.id++;
-    name.append_char(ch);
-    if (ch == '\n') {
-      return TomlError.INVALID_SECTION?;
-    }
-    ch = data.curr();
-  }
+  };
+  
   data.id++;
 
-  while (data.is_ok() && data.curr() != '[') {
-    data.remove_whitespace();
-    if (!data.is_ok()) break;
+  @till_delim(data, '\0'; char curr) {
     TomlField! f = parse_field(file, data);
-    if (catch f) break;
-    if (f.key.str_view() != "") fields.push(f);
-  }
-
-  TomlSection sec;
-  sec.name = name;
-  sec.fields = fields;
+    if (catch err = f) {
+      if (err == TomlError.INTERNAL) return sec;
+      return err?;
+    }
+    sec.fields.push(f);
+    data.remove_whitespace();
+    if (data.curr() == '[') return sec;
+  };
   return sec;
 }
 
 
 
 fn TomlField! parse_field(TomlFile* file, StringStream* data) {
-  if (data.curr() == '[') return TomlError.INTERNAL?;
+  data.remove_whitespace();
   TomlField f;
-  DString name;
-  DString value;
-
-  while (data.is_ok() && data.curr() != '=') {
-    name.append_char(data.curr());
+  @till_delim(data, '='; char ch){
+    if (!ch.is_whitespace()) f.key.append_char(ch);
+    if (ch == '\0') return TomlError.INTERNAL?;
     data.id++;
-    if (data.curr() == '=') break;
-    data.remove_whitespace();
-  }
+  };
+
   data.id++;
   data.remove_whitespace();
-  parse_field_value(&value, data);
-  f.key = name;
-  f.val = value;
+  parse_field_value(&f.val, data);
   return f;
 }
 
 
 
 fn void parse_field_value(DString* value, StringStream* data) {
-  data.remove_whitespace();
   bool is_str = data.curr() == '"';
   bool is_multistr = data.is_multistr();
   if (is_str && !is_multistr) data.id++;

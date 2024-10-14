@@ -26,7 +26,7 @@ fn int main(String[] args)
   defer contents.free();
   defer f.free();
 
-  print_toml(&f);
+  f.print_toml();
   
   b.add_global("globalstuff", "\"ahahaha\"");
   b.add_section("project");
@@ -35,13 +35,6 @@ fn int main(String[] args)
   .add_field("author", "\"a man\"");
   io::printn(b.get_string());
   return 0;
-}
-
-fn void print_toml(TomlFile* f) {
-  foreach(s : f.sections){
-    io::printfn("\n%s\n", s.name);
-    foreach(fi : s.fields) io::printfn("%s : %s", fi.key, fi.val);
-  }
 }
 
 fn String! readfile(String file){
