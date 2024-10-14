@@ -4,44 +4,27 @@ import projutil;
 import tomlmake;
 import arga;
 import toml;
+import config;
 
 
+const String CONFIG_FILE = "cream.toml";
 
-fn int main(String[] args)
-{
+fn bool setup_args(String[] args) {
   ArgLike create_project = arga::make_arg_opt("create", "Make project", &projutil::create_proj);
   ArgLike*[] list = { &create_project };
   defer arga::free_args(list);
 
   if (catch err = arga::argparse(args, list)){
     io::printfn("An error ocurred %s, halting", err);
-    return 1;
+    return false;
   }
+  return true;
+}
 
-  const String FILE = "cream.toml";
-  String contents = readfile(FILE)!!;
-  TomlFile f = toml::parse_toml(contents)!!;
-  TomlBuilder b;
-  defer b.free();
-  defer contents.free();
-  defer f.free();
-
-  f.print_toml();
-  
-  b.add_global("globalstuff", "\"ahahaha\"");
-  b.add_section("project");
-  b.get_section("project")!!
-  .add_field("name", "\"idk\"")
-  .add_field("author", "\"a man\"");
-  io::printn(b.get_string());
+fn int main(String[] args)
+{
+  if (!setup_args(args)) return 1;
+  Config conf = config::load_config(CONFIG_FILE)!!;
   return 0;
 }
 
-fn String! readfile(String file){
-  usz size = file::get_size(file)!;
-  char* ptr = malloc((size+4) * char.sizeof);
-  char[] buff = ptr[0..size+4];
-  File f = file::open(file, "r")!;
-  f.read(buff)!;
-  return (String)buff;
-}

@@ -52,6 +52,10 @@ fn bool StringStream.is_whitespace(&self) {
 
 fn bool StringStream.is_multistr(&data) => (data.id+2 < data.data.len && (data.data[data.id..data.id+2] == "\"\"\""));
 
+fn bool StringStream.is_ok(&self) {
+  return self.data.len > self.id && self.curr() != '\0';
+}
+
 
 fn char StringStream.get(&self, usz id) @operator([]) {
   return self.data[id];
@@ -65,9 +69,16 @@ fn char StringStream.curr(&self) {
   return '\0';
 }
 
-fn bool StringStream.is_ok(&self) {
-  return self.data.len > self.id && self.curr() != '\0';
-}
+/**
+* 
+* @require $defined(sstream.curr()) && $defined(sstream.id)
+*
+**/
+macro @till_delim(sstream, delim; @body(curr)) {
+  while (sstream.curr() != delim) {
+    @body(sstream.curr());
+  }
+} 
 
 fn void StringStream.remove_whitespace(&self) {
   while (self.is_whitespace() || self.curr() == '#') {
@@ -91,21 +102,18 @@ fn void TomlFile.print_toml(&f) {
   }
 }
 
-fn TomlSection! find_section(TomlFile* file, String name) {
-  foreach (sec : file.sections) {
-    if (sec.name.str_view() == name) return sec;
-  }
-  return TomlError.SECTION_NOT_FOUND?;
+
+
+fn TomlFile! parse_toml(String data) {
+  StringStream sstream = {data, 0};
+  TomlFile file;
+  @till_delim(sstream, '\0'; char ch){
+    sstream.remove_whitespace();
+    try_parse(&sstream, &file)!;
+    if (!sstream.is_ok()) return file;
+  };
+  return file;
 }
-
-
-fn DString! find_val_from_sec(TomlSection* sec, String key) {
-  foreach (field : sec.fields) {
-    if (field.key.str_view() == key) return field.val;
-  }
-  return TomlError.KEY_NOT_FOUND?;
-}
-
 
 fn void! try_parse(StringStream* sstream, TomlFile* file) {
   sstream.remove_whitespace();
@@ -124,27 +132,6 @@ fn void! try_parse(StringStream* sstream, TomlFile* file) {
   }
 }
 
-fn TomlFile! parse_toml(String data) {
-  StringStream sstream = {data, 0};
-  TomlFile file;
-  @till_delim(sstream, '\0'; char ch){
-    sstream.remove_whitespace();
-    try_parse(&sstream, &file)!;
-    if (!sstream.is_ok()) return file;
-  };
-  return file;
-}
-
-/**
-* 
-* @require $defined(sstream.curr()) && $defined(sstream.id)
-*
-**/
-macro @till_delim(sstream, delim; @body(curr)) {
-  while (sstream.curr() != delim) {
-    @body(sstream.curr());
-  }
-} 
 
 
 fn TomlSection! parse_section(TomlFile* file, StringStream* data) {
@@ -224,13 +211,31 @@ fn void parse_field_value(DString* value, StringStream* data) {
 }
 
 
-fn DString! get_val(TomlFile* file, String secname, String keyaddr) {
-  if (secname == "") {
-    return find_val_from_sec(&file.global, keyaddr);
+fn DString! TomlSection.find_val(&sec, String key) {
+  foreach (field : sec.fields) {
+    if (field.key.str_view() == key) return field.val;
   }
-  TomlSection section = find_section(file, secname)!;
-  return find_val_from_sec(&section, keyaddr);
+  return TomlError.KEY_NOT_FOUND?;
 }
+
+
+fn TomlSection! TomlFile.find_section(&file, String name) {
+  foreach (sec : file.sections) {
+    if (sec.name.str_view() == name) return sec;
+  }
+  return TomlError.SECTION_NOT_FOUND?;
+}
+
+
+fn DString! TomlFile.get_val(&file, String secname, String keyaddr) {
+  if (secname == "") {
+    return file.global.find_val(keyaddr);
+  }
+  TomlSection section = file.find_section(secname)!;
+  return section.find_val(keyaddr);
+}
+
+
 
 fn void TomlField.free(&self) {
   self.val.free();
