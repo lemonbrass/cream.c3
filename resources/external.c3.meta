@@ -4,8 +4,9 @@
 
 [external.c3.%s]
 url = %s
-include_dir = %s
+include-dir = %s
+clone-flags = %s
 build = %s
 use = %s
-force_link = %s
+force-link = %s
 
