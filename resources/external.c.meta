@@ -1,8 +1,8 @@
 [external.c.%s]
 url = %s
-git_flags = %s
-build_cmd = %s
-commit_id = %s
+clone-flags = %s
+build-cmd = %s
+commit-id = %s
 flags = %s
 output = %s
 # libs to use, eg - --/bin/libmylib.a
