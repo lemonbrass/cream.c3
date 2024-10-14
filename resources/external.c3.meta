@@ -6,6 +6,7 @@
 url = %s
 include-dir = %s
 clone-flags = %s
+commit-id = %s
 build = %s
 use = %s
 force-link = %s
