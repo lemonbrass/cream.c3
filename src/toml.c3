@@ -227,12 +227,12 @@ fn TomlSection! TomlFile.find_section(&file, String name) {
 }
 
 
-fn DString! TomlFile.get_val(&file, String secname, String keyaddr) {
+fn String! TomlFile.get_val(&file, String secname, String keyaddr) {
   if (secname == "") {
-    return file.global.find_val(keyaddr);
+    return (file.global.find_val(keyaddr)!).str_view();
   }
   TomlSection section = file.find_section(secname)!;
-  return section.find_val(keyaddr);
+  return (section.find_val(keyaddr)!).str_view();
 }
 
 

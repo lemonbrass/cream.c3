@@ -25,6 +25,7 @@ fn int main(String[] args)
 {
   if (!setup_args(args)) return 1;
   Config conf = config::load_config(CONFIG_FILE)!!;
+  conf.print();
   return 0;
 }
 
