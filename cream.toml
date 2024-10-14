@@ -1,32 +1,34 @@
 [project]
-name = "cream-c3"
-version = 0.1
-data = "ahaaaaa"
-author = "lemonbrass"
-deps = ["ncurses", "notcurses", "libicu"]
-ext_repos = ["lemonbrass/arga", "someguy/somerepo"]
-description = """
-  YOO! This is my..
-  Test Project...
-  Hahahahahaha
-"""
+name = test
+version = 0.6.9
+author = lemonbrass
+description = test project :)
 
-[subproject]
-names = ["tomlparser", "argumentparser"]
+# external c projects can be added easily just by:
+# 
+# [external.c.projname]
+# url = "git url"
+# git_flags = "git clone flags"
+# build_cmd = ""
+# commit_id = "git commit id to use"
+# flags = "flags"
+# output = "--/bin/"
+# use = [ "--/bin/mylib.a", "--/bin/mylib3.a" ]
+# link = true
+#
+# --/ means the external project clone directory
 
-[subproject.tomlparser]
-src = "toml/src/"
-bin = "toml/bin/"
 
-[subproject.argumentparser]
-src = "somedir"
+# OR you can add custom c3 projects
+# c3 projects are directly included, no need to link them 
+# however, adding custom build command to build it seperately
+#
+# [external.c3.projname]
+# url = "git url"
+# include_dir = ["--/src/"]
+# build = "--/bin/"
+# use = [.... snip]
+# link = true
 
-[extproject.arga]
-src = "--/src/" #  --/ stands for external project clone dir
-includes = ["--/arga.c3"]
 
-[target]
-flags = "-l ncurses"
 
-[target.release]
-flags = "-O5 -Oz"
