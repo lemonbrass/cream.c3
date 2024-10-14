@@ -1,6 +1,6 @@
 
 #c3 projects are directly included, no need to link them 
-#however, adding custom build command to build it seperately
+#however, you can add custom build command to build it seperately
 
 [external.c3.%s]
 url = %s
