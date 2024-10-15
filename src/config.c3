@@ -3,7 +3,7 @@ import std::collections;
 import std::io;
 import toml;
 
-def TargetList = List(<Target>);
+def TargetMap = Map(<String, Target>);
 def ExternCList = List(<External_C>);
 def ExternC3List = List(<External_C3>);
 
@@ -38,13 +38,12 @@ struct Project {
 }
 
 struct Target {
-  String name;
   String flags;
 }
 
 struct Config {
   Project project;
-  TargetList targets;
+  TargetMap targets;
   ExternCList ext_c;
   ExternC3List ext_c3;
 }
@@ -94,17 +93,16 @@ fn void! Config.read_targets(&self, TomlFile* file) {
   SectionList sections = file.get_subsections("target");
   foreach (sec : sections) {
     Target target;
-    target.name = sec.name.copy_str();
     target.flags = sec.find_val("flags").copy_str()!;
-    self.targets.push(target);
+    self.targets.set(sec.name.str_view(), target);
   }
 }
 
 fn void Config.print(&self) {
   io::printfn("%s {author: %s, desc: %s, vers: %s, src: %s}", self.project.name, self.project.author, self.project.description, self.project.version, self.project.src_dirs.data);
-  foreach (t : self.targets) {
-    io::printfn("target %s: %s", t.name, t.flags);
-  }
+  self.targets.@each(; String name, Target t) {
+    io::printfn("target %s: %s", name, t.flags);
+  };
 }
 
 fn void Project.free(&self) {
@@ -115,7 +113,6 @@ fn void Project.free(&self) {
 }
 
 fn void Target.free(&self) {
-  self.name.free();
   self.flags.free();
 }
 
@@ -140,7 +137,9 @@ fn void External_C3.free(&self) {
 
 fn void Config.free(&self) {
   self.project.free();
-  foreach (t : self.targets) t.free();
+  self.targets.@each(; String key, Target val) {
+    val.free();
+  };
   foreach (ext_c : self.ext_c) ext_c.free();
   foreach (ext_c3 : self.ext_c3) ext_c3.free();
   self.targets.free();

@@ -6,6 +6,7 @@ import arga;
 import toml;
 import config;
 import libc;
+import build;
 
 Config conf;
 const String CONFIG_FILE = "cream.toml";
@@ -24,6 +25,7 @@ fn bool setup_args(String[] args) {
 
 fn void! onbuild(ArgLike* arg) {
   if (arg.params.len == 0) libc::system("c3c build");
+  if (arg.params.len == 1) build::build(&conf, arg.params[0])!;
 }
 
 fn bool setup_conf_args(String[] args) {

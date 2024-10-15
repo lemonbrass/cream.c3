@@ -240,9 +240,12 @@ fn String! TomlFile.get_val(&file, String secname, String keyaddr) {
   return (section.find_val(keyaddr)!).copy_str();
 }
 
-fn DString concat_arr(String[] str) {
+fn DString concat_arr(String[] str, String delim = "") {
   DString res;
-  foreach (s : str) res.append_chars(s);
+  foreach (s : str) {
+    res.append_chars(s);
+    res.append_chars(delim);
+  }
   return res;
 }
 
