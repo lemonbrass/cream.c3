@@ -59,7 +59,6 @@ fn Config! load_config(String file) {
   TomlFile parsed = toml::parse_toml(contents)!;
   defer contents.free();
   defer parsed.free();
-  parsed.print_toml();
   conf.read_toml(&parsed)!;
   return conf;
 }

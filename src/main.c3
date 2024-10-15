@@ -5,8 +5,9 @@ import tomlmake;
 import arga;
 import toml;
 import config;
+import libc;
 
-
+Config conf;
 const String CONFIG_FILE = "cream.toml";
 
 fn bool setup_args(String[] args) {
@@ -21,10 +22,32 @@ fn bool setup_args(String[] args) {
   return true;
 }
 
+fn void! onbuild(ArgLike* arg) {
+  if (arg.params.len == 0) libc::system("c3c build");
+}
+
+fn bool setup_conf_args(String[] args) {
+  ArgLike build = arga::make_arg_cparam("build", "Build the project", 
+                                arga::ANY_PARAMS, &onbuild);
+  ArgLike*[] list = { &build };
+  defer arga::free_args(list);
+
+  if (catch err = arga::argparse(args, list)){
+    io::printfn("An error ocurred %s, halting", err);
+    return false;
+  }
+  return true;
+}
+
+
 fn int main(String[] args)
 {
   if (!setup_args(args)) return 1;
-  Config conf = config::load_config(CONFIG_FILE)!!;
+  conf = config::load_config(CONFIG_FILE)!!;
+  defer conf.free();
+
+  setup_conf_args(args);
+  
   conf.print();
   return 0;
 }

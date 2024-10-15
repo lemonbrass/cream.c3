@@ -102,7 +102,7 @@ fn void StringStream.remove_whitespace(&self) {
 
 fn void TomlFile.print_toml(&f) {
   foreach(s : f.sections){
-    io::printfn("\n%s\n", s.name);
+    io::printf("\n%s\n", s.name);
     foreach(fi : s.fields) io::printfn("%s : %s", fi.key, fi.val);
   }
 }
@@ -271,7 +271,6 @@ fn void! TomlList.read(&self, String list) {
   foreach (ch : list) {
     if (ch == ',' || ch == ']') {
       self.data.push(buff.copy_str());
-      io::printn(buff);
       buff.clear();
     }
     if (!is_str && ch == '"') {
@@ -295,7 +294,6 @@ fn void! TomlList.read(&self, String list) {
     if (ch == ',' || ch == ']') {
       if (!buff.str_view().is_empty() || was_str) {
         self.data.push(buff.copy_str());
-        io::printn(buff);
         buff.clear();
       }
       was_str = false;
