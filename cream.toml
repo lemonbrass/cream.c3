@@ -3,7 +3,16 @@ name = test
 version = 0.6.9
 author = lemonbrass
 description = test project :)
+sources = ["src/", "ahaha"]
 
+[target.release]
+flags = "-O5 -g0"
+
+[target.debug]
+flags = "-O0 -g"
+
+[target.general]
+flags = "-h"
 # external c projects can be added easily just by:
 # 
 # [external.c.projname]

@@ -5,6 +5,7 @@ import std::io;
 def SectionList = List(<TomlSection>);
 def FieldList = List(<TomlField>);
 def StreamLambda = fn void! (StringStream*);
+def StrList = List(<String>);
 
 struct TomlField {
   DString val;
@@ -24,6 +25,10 @@ struct TomlFile {
 struct StringStream {
   String data;
   usz    id;
+}
+
+struct TomlList {
+  StrList data;
 }
 
 fault TomlError {
@@ -213,7 +218,7 @@ fn void parse_field_value(DString* value, StringStream* data) {
 
 fn DString! TomlSection.find_val(&sec, String key) {
   foreach (field : sec.fields) {
-    if (field.key.str_view() == key) return field.val;
+    if (field.key.str_view().trim() == key) return field.val;
   }
   return TomlError.KEY_NOT_FOUND?;
 }
@@ -221,7 +226,7 @@ fn DString! TomlSection.find_val(&sec, String key) {
 
 fn TomlSection! TomlFile.find_section(&file, String name) {
   foreach (sec : file.sections) {
-    if (sec.name.str_view() == name) return sec;
+    if (sec.name.str_view().trim() == name) return sec;
   }
   return TomlError.SECTION_NOT_FOUND?;
 }
@@ -229,13 +234,95 @@ fn TomlSection! TomlFile.find_section(&file, String name) {
 
 fn String! TomlFile.get_val(&file, String secname, String keyaddr) {
   if (secname == "") {
-    return (file.global.find_val(keyaddr)!).str_view();
+    return (file.global.find_val(keyaddr)!).copy_str();
   }
-  TomlSection section = file.find_section(secname)!;
-  return (section.find_val(keyaddr)!).str_view();
+  TomlSection section = file.find_section(secname.trim())!;
+  return (section.find_val(keyaddr)!).copy_str();
 }
 
+fn DString concat_arr(String[] str) {
+  DString res;
+  foreach (s : str) res.append_chars(s);
+  return res;
+}
 
+fn SectionList TomlFile.get_subsections(&self, String of) {
+  String[] initials = of.split(".");
+  SectionList sections;
+  foreach (sec : self.sections) {
+    String[] fullname = sec.name.str_view().split(".");
+    if (fullname.len <= initials.len) continue;
+    if (fullname[0..initials.len-1] == initials) {
+      // remove the initials from section name as they are already known
+      sec.name = concat_arr(fullname[initials.len..]);
+      sections.push(sec);
+    }
+  }
+  return sections;
+}
+
+/*
+fn void! TomlList.read(&self, String list) {
+  list = list[1..]; // skip [
+  bool was_str;
+  bool is_str;
+  DString buff;
+  defer buff.free();
+  foreach (ch : list) {
+    if (ch == ',' || ch == ']') {
+      self.data.push(buff.copy_str());
+      io::printn(buff);
+      buff.clear();
+    }
+    if (!is_str && ch == '"') {
+      is_str = true;
+      was_str = true;
+    }
+    if (is_str && ch == '"') is_str = false;
+    if (is_str || !was_str) buff.append_char(ch);
+  }
+}
+*/
+
+fn void! TomlList.read(&self, String list) {
+  list = list[1..];
+  bool was_str = false;
+  bool is_str = false;
+  DString buff;
+  defer buff.free();
+
+  foreach (ch : list) {
+    if (ch == ',' || ch == ']') {
+      if (!buff.str_view().is_empty() || was_str) {
+        self.data.push(buff.copy_str());
+        io::printn(buff);
+        buff.clear();
+      }
+      was_str = false;
+      continue;
+    }
+
+    if (!is_str && ch == '"') {
+      is_str = true;
+      was_str = true;
+      continue;
+    }
+
+    if (is_str && ch == '"') {
+      is_str = false;
+      continue;
+    }
+
+    if (is_str || (!was_str && ch != ' ')) {
+      buff.append_char(ch);
+    }
+  }
+}
+
+fn void TomlList.free(&self) {
+  foreach (str : self.data) str.free();
+  self.data.free();
+}
 
 fn void TomlField.free(&self) {
   self.val.free();
