@@ -24,13 +24,11 @@ fn bool setup_args(String[] args) {
 }
 
 fn void! onbuild(ArgLike* arg) {
-  if (arg.params.len == 0) libc::system("c3c build");
-  if (arg.params.len == 1) build::build(&conf, arg.params[0])!;
+  build::build(&conf, arg.params[0])!;
 }
 
 fn bool setup_conf_args(String[] args) {
-  ArgLike build = arga::make_arg_cparam("build", "Build the project", 
-                                arga::ANY_PARAMS, &onbuild);
+  ArgLike build = arga::make_arg_cparam("build", "Build the project", 1, &onbuild);
   ArgLike*[] list = { &build };
   defer arga::free_args(list);
 
@@ -55,7 +53,7 @@ fn int main(String[] args)
     conf.print();
     conf.free();
   }
-
+  io::printn("yoya");
   return 0;
 }
 

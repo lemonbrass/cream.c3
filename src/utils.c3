@@ -20,6 +20,11 @@ macro StringOpt @from_err(#err) {
   return {true, #err!!};
 }
 
+macro StringOpt @from_dstr_err(#err) {
+  if (catch #err) return {false, ""};
+  return {true, #err!!.copy_str()};
+}
+
 fn String concat(String... operands) @builtin {
   DString res;
   defer res.free();

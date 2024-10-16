@@ -7,10 +7,12 @@ sources = ["src/"]
 
 [target.release]
 flags = "-O5 -g0"
+after-build = "echo 'built'"
 
 [target.debug]
 flags = "-O0 -g"
 
+"
 # external c projects can be added easily just by:
 # 
 # [external.c.projname]

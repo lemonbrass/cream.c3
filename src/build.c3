@@ -14,7 +14,8 @@ fn void! build(Config* conf, String target) {
   cmd.push("compile");
   cmd.push("-o");
   cmd.push(outfile);
-  cmd.push(conf.targets.get(target)!.flags);
+  Target target_t = conf.targets.get(target)!;
+  cmd.push(target_t.flags);
   foreach (dir : conf.project.src_dirs.data) {
     PathList files = files_in(dir)!;
     foreach (f : files) cmd.push(f.to_new_string());
@@ -28,10 +29,21 @@ fn void! build(Config* conf, String target) {
   //proc.read_stdout(&buff, 1024)!;
   //io::printn((String)(buff[0..]));
   //proc.destroy();
-
   DString cmdstr = toml::concat_arr(cmd.array_view(), " ");
   defer cmdstr.free();
+  if (target_t.build_cmd.valid) {
+    ZString befcmd = target_t.build_cmd.str.zstr_copy();
+    io::printfn("Running before-cmd: %s", befcmd);
+    libc::system(befcmd);
+    free(befcmd);
+  }
   libc::system(cmdstr.zstr_view());
+  if (target_t.afterbuild_cmd.valid) {
+    ZString aftcmd = target_t.afterbuild_cmd.str.zstr_copy();
+    io::printfn("Running after-cmd: %s", aftcmd);
+    libc::system(aftcmd);
+    free(aftcmd);
+  }
 }
 
 fn PathList! files_in(String dir){

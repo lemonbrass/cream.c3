@@ -44,6 +44,8 @@ struct Project {
 
 struct Target {
   String flags;
+  StringOpt build_cmd;
+  StringOpt afterbuild_cmd;
 }
 
 struct Config {
@@ -108,6 +110,10 @@ fn void! Config.read_targets(&self, TomlFile* file) {
   foreach (sec : sections) {
     Target target;
     target.flags = sec.find_val("flags").copy_str()!;
+    DString! cmd = sec.find_val("before-build");
+    target.build_cmd = utils::@from_dstr_err(cmd);
+    cmd = sec.find_val("after-build");
+    target.afterbuild_cmd = utils::@from_dstr_err(cmd);
     self.targets.set(sec.name.str_view(), target);
   }
 }
@@ -128,6 +134,8 @@ fn void Project.free(&self) {
 
 fn void Target.free(&self) {
   self.flags.free();
+  self.build_cmd.str.free();
+  self.afterbuild_cmd.str.free();
 }
 
 fn void External_C.free(&self) {
