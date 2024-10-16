@@ -15,17 +15,23 @@ fn void! create_proj(ArgLike* arg) {
   String author = prompt("What's author name: ")!;
   String description = prompt("What's the project about (description): ")!;
   DString gen_toml;
-  DString buff;
   defer {
     gen_toml.free();
     projname.free();
     version.free();
     author.free();
     description.free();
-    buff.free();
   }
   gen_toml.appendf(CREAM_TOML_BASIC, projname, version, author, description);
   
+  write_filetree(projname, &gen_toml)!;
+  
+  io::printfn("Generated project %s, you should probably add a better description", projname);
+}
+
+fn void! write_filetree(String projname, DString* gen_toml) {
+  DString buff;
+  defer buff.free();
   Path relpath = path::new(projname)!;
   Path path = relpath.new_absolute()!;
   defer path.free();
@@ -36,8 +42,6 @@ fn void! create_proj(ArgLike* arg) {
   File cream_conf = file::open(buff.str_view(), "w")!;
 
   cream_conf.write(gen_toml.str_view())!;
-  
-  io::printfn("Generated project %s, you should probably add a better description", projname);
 }
 
 fn String! prompt(String msg) {

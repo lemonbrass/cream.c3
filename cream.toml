@@ -1,19 +1,16 @@
 [project]
-name = "test"
-version = "0.6.9"
+name = "cream"
+version = "0.0a-pre"
 author = "lemonbrass"
-description = "test project :)"
-bin = "build/"
+description = "Cream- the c3 buildsystem"
 sources = ["src/"]
 
 [target.release]
-flags = "-O4"
+flags = "-O5 -g0"
 
 [target.debug]
-flags = " "
+flags = "-O0 -g"
 
-[target.general]
-flags = " "
 # external c projects can be added easily just by:
 # 
 # [external.c.projname]
