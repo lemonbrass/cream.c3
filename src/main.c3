@@ -45,12 +45,17 @@ fn bool setup_conf_args(String[] args) {
 fn int main(String[] args)
 {
   if (!setup_args(args)) return 1;
-  conf = config::load_config(CONFIG_FILE)!!;
-  defer conf.free();
 
-  setup_conf_args(args);
-  
-  conf.print();
+  Path path = path::new(CONFIG_FILE)!!;
+  defer path.free();
+  if (path::exists(path))
+  {
+    conf = config::load_config(CONFIG_FILE)!!;
+    setup_conf_args(args);
+    conf.print();
+    conf.free();
+  }
+
   return 0;
 }
 

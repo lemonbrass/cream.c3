@@ -1,6 +1,7 @@
 module projutil;
 import std::io;
 import arga;
+import build;
 
 const String CREAM_TOML_BASIC = $embed("../resources/cream.toml.meta");
 const String EXTERNAL_C_META = $embed("../resources/external.c.meta");
@@ -25,11 +26,13 @@ fn void! create_proj(ArgLike* arg) {
   }
   gen_toml.appendf(CREAM_TOML_BASIC, projname, version, author, description);
   
-  Path path = path::new(projname)!;
+  Path relpath = path::new(projname)!;
+  Path path = relpath.new_absolute()!;
+  defer path.free();
+  defer relpath.free();
   path::mkdir(path)!;
-  path.free();
   
-  buff.appendf("%s/cream.toml", projname);
+  buff.appendf("%s%ccream.toml", projname, build::path_ch());
   File cream_conf = file::open(buff.str_view(), "w")!;
 
   cream_conf.write(gen_toml.str_view())!;

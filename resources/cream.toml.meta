@@ -1,8 +1,12 @@
 [project]
-name = %s
-version = %s
-author = %s
-description = %s
+name = "%s"
+version = "%s"
+author = "%s"
+description = "%s"
+sources = ["src/"]
+
+[target.debug]
+flags = "-O0 -g"
 
 # external c projects can be added easily just by:
 # 
