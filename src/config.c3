@@ -2,6 +2,9 @@ module config;
 import std::collections;
 import std::io;
 import toml;
+import utils;
+
+const String PROJ_BUILD_DIR = "build/";
 
 def TargetMap = Map(<String, Target>);
 def ExternCList = List(<External_C>);
@@ -34,6 +37,8 @@ struct Project {
   String author;
   String description;
   String version;
+  String build_dir;
+  
   TomlList src_dirs;
 }
 
@@ -52,14 +57,20 @@ fault ConfigError {
   UNINDENTIFIED,
 }
 
-fn Config! load_config(String file) {
-  Config conf;
+
+
+fn Config! load_file(String file) {
   String contents = readfile(file)!;
-  TomlFile parsed = toml::parse_toml(contents)!;
   defer contents.free();
+  return load(contents);
+}
+
+fn Config! load(String data) {
+  Config conf;
+  TomlFile parsed = toml::parse_toml(data)!;
   defer parsed.free();
   conf.read_toml(&parsed)!;
-  return conf;
+  return conf;  
 }
 
 fn String! readfile(String file){
@@ -82,6 +93,9 @@ fn void! Config.read_project(&self, TomlFile* file) {
   String vers = file.get_val("project", "version")!;
   String author = file.get_val("project", "author")!;
   String src_dirs = file.get_val("project", "sources")!;
+  String! errbuild_dir = file.get_val("project", "build-directory");
+  StringOpt build_dir = utils::@from_err(errbuild_dir);
+  self.project.build_dir = build_dir.get_def("build/").path_strip();
   self.project.name = name;
   self.project.description = desc;
   self.project.author = author;

@@ -3,14 +3,17 @@ import std::io, std::os;
 import config;
 import toml;
 import libc;
+import utils;
 
 fn void! build(Config* conf, String target) {
+  String outfile = utils::concat(conf.project.build_dir, path_str(), conf.project.name);
   StrList cmd;
   defer cmd.free();
+  defer outfile.free();
   cmd.push("c3c");
   cmd.push("compile");
   cmd.push("-o");
-  cmd.push(conf.project.name);
+  cmd.push(outfile);
   cmd.push(conf.targets.get(target)!.flags);
   foreach (dir : conf.project.src_dirs.data) {
     PathList files = files_in(dir)!;
@@ -29,8 +32,6 @@ fn void! build(Config* conf, String target) {
   DString cmdstr = toml::concat_arr(cmd.array_view(), " ");
   defer cmdstr.free();
   libc::system(cmdstr.zstr_view());
-
-  cmd.free();
 }
 
 fn PathList! files_in(String dir){
@@ -49,10 +50,4 @@ fn PathList! files_in(String dir){
     absfiles.push(path::new(pathstr.str_view())!);
   }
   return absfiles;
-}
-fn char path_ch() @if(env::POSIX) { 
-  return  '/';
-}
-fn char path_ch() @if(env::WIN32) {
-  return '\\';
 }

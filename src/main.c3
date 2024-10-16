@@ -1,4 +1,4 @@
-module test;
+module main;
 import std::io;
 import projutil;
 import tomlmake;
@@ -50,7 +50,7 @@ fn int main(String[] args)
   defer path.free();
   if (path::exists(path))
   {
-    conf = config::load_config(CONFIG_FILE)!!;
+    conf = config::load_file(CONFIG_FILE)!!;
     setup_conf_args(args);
     conf.print();
     conf.free();
