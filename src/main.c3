@@ -53,7 +53,6 @@ fn int main(String[] args)
     conf.print();
     conf.free();
   }
-  io::printn("yoya");
   return 0;
 }
 
