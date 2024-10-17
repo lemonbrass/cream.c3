@@ -7,6 +7,7 @@ import utils;
 
 fn void! build(Config* conf, String target) {
   String outfile = utils::concat(conf.project.build_dir, path_str(), conf.project.name);
+  create_build_dir(conf)!;
   StrList cmd;
   defer cmd.free();
   defer outfile.free();
@@ -21,14 +22,6 @@ fn void! build(Config* conf, String target) {
     foreach (f : files) cmd.push(f.to_new_string());
   }
   io::printfn("building: %s\n", cmd);
-  //char[1024] buff;
-  //SubProcess proc = process::create(cmd.array_view())!;
-  //proc.join()!;
-  //proc.read_stderr(&buff, 1024)!;
-  //io::printn((String)(buff[0..]));
-  //proc.read_stdout(&buff, 1024)!;
-  //io::printn((String)(buff[0..]));
-  //proc.destroy();
   DString cmdstr = toml::concat_arr(cmd.array_view(), " ");
   defer cmdstr.free();
   if (target_t.build_cmd.valid) {
@@ -44,6 +37,12 @@ fn void! build(Config* conf, String target) {
     libc::system(aftcmd);
     free(aftcmd);
   }
+}
+
+fn void! create_build_dir(Config* conf) {
+  Path outdir = path::new(conf.project.build_dir)!;
+  defer outdir.free();
+  if (catch path::mkdir(outdir)) return;
 }
 
 fn PathList! files_in(String dir){

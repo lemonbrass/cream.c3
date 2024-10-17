@@ -4,6 +4,7 @@ version = "0.0a-pre"
 author = "lemonbrass"
 description = "Cream- the c3 buildsystem"
 sources = ["src/"]
+build-directory = "build"
 
 [target.release]
 flags = "-O5 -g0"
