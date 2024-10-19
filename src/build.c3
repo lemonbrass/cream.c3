@@ -5,38 +5,53 @@ import toml;
 import libc;
 import utils;
 
-fn void! build(Config* conf, String target) {
-  String outfile = utils::concat(conf.project.build_dir, path_str(), conf.project.name);
-  create_build_dir(conf)!;
+struct Build {
+  String outfile;
+  String outdir;
   StrList cmd;
-  defer cmd.free();
-  defer outfile.free();
-  cmd.push("c3c");
-  cmd.push("compile");
-  cmd.push("-o");
-  cmd.push(outfile);
+  Target target;
+}
+
+fn void! Build.build(&self) {
+  DString cmd_dstr = toml::concat_arr(self.cmd.array_view(), " ");
+  defer cmd_dstr.free();
+  ZString zcmd = cmd_dstr.copy_zstr();
+  defer free(zcmd);
+  io::printfn("Building: %s\n", self.cmd);
+
+  Target target = self.target;
+  io::printfn("%s, %s", target.build_cmd, target.afterbuild_cmd);
+  libc::system((ZString)target.build_cmd);
+  io::printn("");
+  libc::system(zcmd);
+  io::printn("");
+  io::printn((ZString)target.afterbuild_cmd);
+  io::printn("");
+
+  io::printfn("Finished building...");
+}
+
+fn Build! fetch_build(Config* conf, String target) {
+  Build build;
+  build.outfile = utils::concat(conf.project.build_dir, path_str(), conf.project.name);
+
+  create_build_dir(conf)!;
+  build.cmd.push("c3c");
+  build.cmd.push("compile");
+  build.cmd.push("-o");
+  build.cmd.push(build.outfile);
+
   Target target_t = conf.targets.get(target)!;
-  cmd.push(target_t.flags);
+  build.cmd.push(target_t.flags);
+  
   foreach (dir : conf.project.src_dirs.data) {
     PathList files = files_in(dir)!;
-    foreach (f : files) cmd.push(f.to_new_string());
+    foreach (f : files) {
+      build.cmd.push(f.to_new_string());
+    }
   }
-  io::printfn("building: %s\n", cmd);
-  DString cmdstr = toml::concat_arr(cmd.array_view(), " ");
-  defer cmdstr.free();
-  if (target_t.build_cmd.valid) {
-    ZString befcmd = target_t.build_cmd.str.zstr_copy();
-    io::printfn("Running before-cmd: %s", befcmd);
-    libc::system(befcmd);
-    free(befcmd);
-  }
-  libc::system(cmdstr.zstr_view());
-  if (target_t.afterbuild_cmd.valid) {
-    ZString aftcmd = target_t.afterbuild_cmd.str.zstr_copy();
-    io::printfn("Running after-cmd: %s", aftcmd);
-    libc::system(aftcmd);
-    free(aftcmd);
-  }
+
+  return build;
 }
 
 fn void! create_build_dir(Config* conf) {

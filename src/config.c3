@@ -6,6 +6,7 @@ import utils;
 
 const String PROJ_BUILD_DIR = "build/";
 
+def TestMap = Map(<String, Test>);
 def TargetMap = Map(<String, Target>);
 def ExternCList = List(<External_C>);
 def ExternC3List = List(<External_C3>);
@@ -26,7 +27,7 @@ struct External_C {
   String url;         // required
   String commit_id;   // required
   String build_cmd;   // required
-  TomlList libs;       // required
+  TomlList libs;      // required
   String output_dir;  // defaults to build
   String clone_flags;
   bool link_switch;   // defaults to false
@@ -44,13 +45,24 @@ struct Project {
 
 struct Target {
   String flags;
-  StringOpt build_cmd;
-  StringOpt afterbuild_cmd;
+  String build_cmd;
+  String afterbuild_cmd;
+}
+
+enum TestType {COMMAND, SOURCE}
+
+struct Test {
+  TestType type;
+  union {
+    String command;
+    TomlList sources;
+  }
 }
 
 struct Config {
   Project project;
   TargetMap targets;
+  TestMap tests;
   ExternCList ext_c;
   ExternC3List ext_c3;
 }
@@ -87,6 +99,7 @@ fn String! readfile(String file){
 fn void! Config.read_toml(&self, TomlFile* file) {
   self.read_project(file)!;
   self.read_targets(file)!;
+  self.read_tests(file)!;
 }
 
 fn void! Config.read_project(&self, TomlFile* file) {
@@ -107,14 +120,36 @@ fn void! Config.read_project(&self, TomlFile* file) {
 
 fn void! Config.read_targets(&self, TomlFile* file) {
   SectionList sections = file.get_subsections("target");
+  defer sections.free();
   foreach (sec : sections) {
     Target target;
     target.flags = sec.find_val("flags").copy_str()!;
     DString! cmd = sec.find_val("before-build");
-    target.build_cmd = utils::@from_dstr_err(cmd);
+    defer if (try cmd) cmd.free();
+    if (try cmd) target.build_cmd = cmd.copy_str();
     cmd = sec.find_val("after-build");
-    target.afterbuild_cmd = utils::@from_dstr_err(cmd);
+    if (try cmd) target.afterbuild_cmd = cmd.copy_str();
     self.targets.set(sec.name.str_view(), target);
+    //io::printfn("ue %s, %s", target.build_cmd, target.afterbuild_cmd);
+  }
+}
+
+fn void! Config.read_tests(&self, TomlFile* file) {
+  SectionList tests = file.get_subsections("test");
+  foreach (test : tests) {
+    String type = test.find_val("type")!.str_view();
+    Test test_conf;
+    if (type == "command") {
+      test_conf.type = COMMAND;
+      test_conf.command = test.find_val("command")!.copy_str();
+    }
+    else {
+      test_conf.type = SOURCE;
+      String sources = test.find_val("sources")!.copy_str();
+      test_conf.sources.read(sources)!;
+      sources.free();
+    }
+    self.tests.set(test.name.str_view(), test_conf);
   }
 }
 
@@ -123,6 +158,17 @@ fn void Config.print(&self) {
   self.targets.@each(; String name, Target t) {
     io::printfn("target %s: %s", name, t.flags);
   };
+  self.tests.@each(; String name, Test t) {
+    io::printfn("test %s: %s", name, t.type);
+  };
+}
+
+fn void Test.free(&self) {
+  if (self.type == COMMAND) {
+    self.command.free();
+  }else {
+    self.sources.free();
+  }
 }
 
 fn void Project.free(&self) {
@@ -134,8 +180,8 @@ fn void Project.free(&self) {
 
 fn void Target.free(&self) {
   self.flags.free();
-  self.build_cmd.str.free();
-  self.afterbuild_cmd.str.free();
+  self.build_cmd.free();
+  self.afterbuild_cmd.free();
 }
 
 fn void External_C.free(&self) {
@@ -159,6 +205,9 @@ fn void External_C3.free(&self) {
 
 fn void Config.free(&self) {
   self.project.free();
+  self.tests.@each(; String key, Test val) {
+    val.free();
+  };
   self.targets.@each(; String key, Target val) {
     val.free();
   };
@@ -167,4 +216,5 @@ fn void Config.free(&self) {
   self.targets.free();
   self.ext_c.free();
   self.ext_c3.free();
+  self.tests.free();
 }
