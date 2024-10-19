@@ -3,7 +3,7 @@ cream.c3 is a tool for managing c3 projects, adding external dependencies and it
 
 ## Installation
 ### Prerequisites
- C3 compiler (0.6.4+)
+ C3 compiler (0.6.2+)
 ### Steps
 #### Clone the repo
 ```sh
