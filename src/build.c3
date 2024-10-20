@@ -5,38 +5,50 @@ import toml;
 import libc;
 import utils;
 
-fn void! build(Config* conf, String target) {
+struct Build {
+  String cmd;
+  Target targ;
+}
+
+fn void! Build.build(&buildobj) {
+  StringOpt beforebuild = buildobj.targ.build_cmd;
+  StringOpt afterbuild = buildobj.targ.afterbuild_cmd;
+  if (beforebuild.valid) {
+    io::printfn("Running before-build command: %s", beforebuild.str);
+    libc::system((ZString)beforebuild.str);
+  }
+  io::printn("Building...");
+  libc::system((ZString)buildobj.cmd);
+  if (afterbuild.valid) {
+    io::printfn("Running after-build command: %s", afterbuild.str);
+    libc::system((ZString)afterbuild.str);
+  }
+}
+
+fn Build! from_conf(Config* conf, String target) {
+  Build build_obj;
   String outfile = utils::concat(conf.project.build_dir, path_str(), conf.project.name);
-  create_build_dir(conf)!;
   StrList cmd;
+  Target target_t = conf.targets.get(target)!;
   defer cmd.free();
   defer outfile.free();
+
+  create_build_dir(conf)!;
   cmd.push("c3c");
   cmd.push("compile");
   cmd.push("-o");
   cmd.push(outfile);
-  Target target_t = conf.targets.get(target)!;
+
   cmd.push(target_t.flags);
   foreach (dir : conf.project.src_dirs.data) {
     PathList files = files_in(dir)!;
     foreach (f : files) cmd.push(f.to_new_string());
   }
-  io::printfn("building: %s\n", cmd);
   DString cmdstr = toml::concat_arr(cmd.array_view(), " ");
   defer cmdstr.free();
-  if (target_t.build_cmd.valid) {
-    ZString befcmd = target_t.build_cmd.str.zstr_copy();
-    io::printfn("Running before-cmd: %s", befcmd);
-    libc::system(befcmd);
-    free(befcmd);
-  }
-  libc::system(cmdstr.zstr_view());
-  if (target_t.afterbuild_cmd.valid) {
-    ZString aftcmd = target_t.afterbuild_cmd.str.zstr_copy();
-    io::printfn("Running after-cmd: %s", aftcmd);
-    libc::system(aftcmd);
-    free(aftcmd);
-  }
+  build_obj.cmd = cmdstr.copy_str();
+  build_obj.targ = target_t;
+  return build_obj;
 }
 
 fn void! create_build_dir(Config* conf) {

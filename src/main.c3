@@ -24,7 +24,7 @@ fn bool setup_args(String[] args) {
 }
 
 fn void! onbuild(ArgLike* arg) {
-  build::build(&conf, arg.params[0])!;
+  build::from_conf(&conf, arg.params[0])!.build()!;
 }
 
 fn bool setup_conf_args(String[] args) {
