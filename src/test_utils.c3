@@ -3,6 +3,11 @@ import toml;
 import std::collections;
 import std::io;
 import libc;
+import config;
+import utils;
+import build;
+
+const String TEST_FLAGS = "-O5";
 
 def TestMap = HashMap(<String, Test>);
 enum TestType { COMMAND, SCRIPT }
@@ -10,13 +15,14 @@ enum TestType { COMMAND, SCRIPT }
 struct Test {
   TestType type;
   String name;
+  Project project;
   union {
     String cmd;
     TomlList sources;
   }
 }
 
-fn TestMap! read_tests(SectionList sections) {
+fn TestMap! read_tests(SectionList sections, Project project) {
   TestMap tests;
   foreach (sec : sections) {
     Test test;
@@ -30,6 +36,7 @@ fn TestMap! read_tests(SectionList sections) {
       test.type = SCRIPT;
       test.sources.read(sec.find_val("sources")!.str_view())!;
     }
+    test.project = project;
     tests.set(test.name, test);
   }
   return tests;
@@ -44,8 +51,18 @@ fn void! Test.run(&self) {
     }
   }
   else {
-    io::printn("TODO");
+    self.build_scripts()!;
   }
+}
+
+fn void! Test.build_scripts(&self) {
+  String output = concat(self.project.build_dir, path_str(), "tmp", self.name);
+  defer output.free();
+  foreach (src : self.project.src_dirs.data) {
+    self.sources.data.push(src);
+  }
+  Build buildobj = build::new_temp(output, self.sources.data, TEST_FLAGS, self.name)!;
+  buildobj.build()!;
 }
 
 fn void Test.free(&self) {

@@ -88,7 +88,7 @@ fn String! readfile(String file){
 fn void! Config.read_toml(&self, TomlFile* file) {
   self.read_project(file)!;
   self.read_targets(file)!;
-  self.tests = test::read_tests(file.get_subsections("test"))!;
+  self.tests = test::read_tests(file.get_subsections("test"), self.project)!;
 }
 
 fn void! Config.read_project(&self, TomlFile* file) {

@@ -17,7 +17,7 @@ fn void! Build.build(&buildobj) {
     io::printfn("Running before-build command: %s", beforebuild.str);
     libc::system((ZString)beforebuild.str);
   }
-  io::printn("Building...");
+  io::printfn("Building: %s", buildobj.cmd);
   libc::system((ZString)buildobj.cmd);
   if (afterbuild.valid) {
     io::printfn("Running after-build command: %s", afterbuild.str);
@@ -33,7 +33,7 @@ fn Build! from_conf(Config* conf, String target) {
   defer cmd.free();
   defer outfile.free();
 
-  create_build_dir(conf)!;
+  create_build_dir(outfile[0..outfile.len-conf.project.name.len])!;
   cmd.push("c3c");
   cmd.push("compile");
   cmd.push("-o");
@@ -51,8 +51,34 @@ fn Build! from_conf(Config* conf, String target) {
   return build_obj;
 }
 
-fn void! create_build_dir(Config* conf) {
-  Path outdir = path::new(conf.project.build_dir)!;
+fn Build! new_temp(String tmpdir, StrList sources, String flags, String outfile) {
+  Build build_obj;
+  Target target_t;
+  target_t.flags = flags;
+  StrList cmd;
+  defer cmd.free();
+
+  create_build_dir(tmpdir)!;
+  cmd.push("c3c");
+  cmd.push("compile");
+  cmd.push("-o");
+  cmd.push(outfile);
+  cmd.push(target_t.flags);
+
+  foreach (dir : sources) {
+    PathList files = files_in(dir)!;
+    foreach (f : files) cmd.push(f.to_new_string());
+  }
+
+  DString cmdstr = toml::concat_arr(cmd.array_view(), " ");
+  defer cmdstr.free();
+  build_obj.cmd = cmdstr.copy_str();
+  build_obj.targ = target_t;
+  return build_obj;
+}
+
+fn void! create_build_dir(String dir) {
+  Path outdir = path::new(dir)!;
   defer outdir.free();
   if (catch path::mkdir(outdir)) return;
 }
