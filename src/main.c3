@@ -27,9 +27,14 @@ fn void! onbuild(ArgLike* arg) {
   build::from_conf(&conf, arg.params[0])!.build()!;
 }
 
+fn void! ontest(ArgLike* arg) {
+  conf.tests.get(arg.params[0])!.run()!;
+}
+
 fn bool setup_conf_args(String[] args) {
   ArgLike build = arga::make_arg_cparam("build", "Build the project", 1, &onbuild);
-  ArgLike*[] list = { &build };
+  ArgLike test = arga::make_arg_cparam("test", "Test the project", 1, &ontest);
+  ArgLike*[] list = { &build, &test };
   defer arga::free_args(list);
 
   if (catch err = arga::argparse(args, list)){

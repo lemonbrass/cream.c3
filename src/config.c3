@@ -53,7 +53,7 @@ struct Config {
   TargetMap targets;
   ExternCList ext_c;
   ExternC3List ext_c3;
-  TestList tests;
+  TestMap tests;
 }
 
 fault ConfigError {
@@ -127,13 +127,13 @@ fn void Config.print(&self) {
     io::printfn("target %s: %s", name, t.flags);
   };
   
-  foreach (test : self.tests) {
+  self.tests.@each(; String name, Test test) {
     if (test.type == COMMAND) {
       io::printfn("Test %s: %s, %s", test.name, test.type, test.cmd);
     } else {
       io::printfn("Test %s: %s, %s", test.name, test.type, test.sources.data);
     }
-  }
+  };
 }
 
 fn void Project.free(&self) {
@@ -172,9 +172,11 @@ fn void Config.free(&self) {
   self.targets.@each(; String key, Target val) {
     val.free();
   };
+  self.tests.@each(;String name, Test test) {
+    test.free();
+  };
   foreach (ext_c : self.ext_c) ext_c.free();
   foreach (ext_c3 : self.ext_c3) ext_c3.free();
-  foreach (test : self.tests) test.free();
   self.targets.free();
   self.ext_c.free();
   self.ext_c3.free();

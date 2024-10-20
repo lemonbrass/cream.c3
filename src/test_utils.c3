@@ -1,8 +1,10 @@
 module test;
 import toml;
 import std::collections;
+import std::io;
+import libc;
 
-def TestList = List(<Test>);
+def TestMap = HashMap(<String, Test>);
 enum TestType { COMMAND, SCRIPT }
 
 struct Test {
@@ -14,8 +16,8 @@ struct Test {
   }
 }
 
-fn TestList! read_tests(SectionList sections) {
-  TestList tests;
+fn TestMap! read_tests(SectionList sections) {
+  TestMap tests;
   foreach (sec : sections) {
     Test test;
     test.name = sec.name.copy_str();
@@ -28,9 +30,22 @@ fn TestList! read_tests(SectionList sections) {
       test.type = SCRIPT;
       test.sources.read(sec.find_val("sources")!.str_view())!;
     }
-    tests.push(test);
+    tests.set(test.name, test);
   }
   return tests;
+}
+
+fn void! Test.run(&self) {
+  io::printfn("Running test %s...", self.name);
+  if (self.type == COMMAND) {
+    CInt res = libc::system((ZString) self.cmd);
+    if (res != 0) {
+      io::eprintfn("Command %s failed with exit code %s :(", self.cmd, res);
+    }
+  }
+  else {
+    io::printn("TODO");
+  }
 }
 
 fn void Test.free(&self) {
