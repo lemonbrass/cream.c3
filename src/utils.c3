@@ -25,6 +25,10 @@ macro StringOpt @from_dstr_err(#err) {
   return {true, #err!!.copy_str()};
 }
 
+fn void StringOpt.free(&self) {
+  if (self.valid) self.str.free();
+}
+
 fn String concat(String... operands) @builtin {
   DString res;
   defer res.free();
@@ -51,3 +55,8 @@ fn String String.path_strip(str) @builtin {
   if (str[str.len-1]==path_ch()) str = str[0..str.len-2];
   return str;
 }
+
+fn String get_platform() @builtin @if(env::DARWIN) { return "macos"; }
+fn String get_platform() @builtin @if(env::WIN32) { return "windows"; }
+fn String get_platform() @builtin @if(env::LINUX) { return "linux"; }
+fn String get_platform() @builtin @if(env::POSIX && !env::LINUX && !env::DARWIN) { return "posixlike"; }

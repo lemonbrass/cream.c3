@@ -110,3 +110,8 @@ fn PathList! files_in(String dir){
   files.free()!;
   return absfiles;
 }
+
+fn void Build.free(&self) {
+  self.outfile.free();
+  self.cmd.free();
+}

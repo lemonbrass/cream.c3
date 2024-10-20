@@ -6,6 +6,7 @@ import utils;
 import test;
 import deps;
 import project;
+import install;
 
 def TargetMap = Map(<String, Target>);
 
@@ -22,12 +23,12 @@ struct Config {
   TestMap tests;
   ExternCMap ext_c;
   ExternC3Map ext_c3;
+  InstallPreset install;
 }
 
 fault ConfigError {
   UNINDENTIFIED,
 }
-
 
 
 fn Config! load_file(String file) {
@@ -41,6 +42,7 @@ fn Config! load(String data) {
   TomlFile parsed = toml::parse_toml(data)!;
   defer parsed.free();
   conf.read_toml(&parsed)!;
+  conf.install = install::read_toml(&&parsed.find_section("install")!)!;
   return conf;  
 }
 
@@ -113,4 +115,5 @@ fn void Config.free(&self) {
   self.ext_c.free();
   self.ext_c3.free();
   self.project.free();
+  self.install.free();
 }

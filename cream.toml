@@ -21,6 +21,8 @@ command = "echo 'testing, 1 2 3, OK, yeah'"
 type = "script"
 sources = [ "tests" ]
 
+[install]
+for-all = "cp ./build/cream ~/.bin/cream"
 "
 # external c projects can be added easily just by:
 # 

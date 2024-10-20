@@ -24,17 +24,24 @@ fn bool setup_args(String[] args) {
 }
 
 fn void! onbuild(ArgLike* arg) {
-  build::from_conf(&conf, arg.params[0])!.build()!;
+  Build build = build::from_conf(&conf, arg.params[0])!;
+  build.build()!;
+  build.free();
 }
 
 fn void! ontest(ArgLike* arg) {
   conf.tests.get(arg.params[0])!.run()!;
 }
 
+fn void! oninstall(ArgLike* arg) {
+  conf.install.install()!;
+}
+
 fn bool setup_conf_args(String[] args) {
   ArgLike build = arga::make_arg_cparam("build", "Build the project", 1, &onbuild);
   ArgLike test = arga::make_arg_cparam("test", "Test the project", 1, &ontest);
-  ArgLike*[] list = { &build, &test };
+  ArgLike install = arga::make_arg_opt("install", "Run install command", &oninstall);
+  ArgLike*[] list = { &build, &test, &install };
   defer arga::free_args(list);
 
   if (catch err = arga::argparse(args, list)){

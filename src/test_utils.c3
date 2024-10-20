@@ -73,6 +73,7 @@ fn void! Test.build_scripts(&self) {
   test_flags.appendf(META_TEST_FLAGS, "test");
   Build buildobj = build::new_temp(output, self.sources.data, test_flags.str_view(), self.name)!;
   buildobj.build()!;
+  buildobj.free();
 }
 
 fn void Test.free(&self) {
