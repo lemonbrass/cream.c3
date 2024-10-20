@@ -7,7 +7,7 @@ import config;
 import utils;
 import build;
 
-const String TEST_FLAGS = "-O5";
+const String META_TEST_FLAGS = "-z '-e %s' "; // define custom startup func
 
 def TestMap = HashMap(<String, Test>);
 enum TestType { COMMAND, SCRIPT }
@@ -67,7 +67,10 @@ fn void! Test.build_scripts(&self) {
   foreach (src : self.project.src_dirs.data) {
     self.sources.data.push(src);
   }
-  Build buildobj = build::new_temp(output, self.sources.data, TEST_FLAGS, self.name)!;
+  DString test_flags;
+  defer test_flags.free();
+  test_flags.appendf(META_TEST_FLAGS, "test");
+  Build buildobj = build::new_temp(output, self.sources.data, test_flags.str_view(), self.name)!;
   buildobj.build()!;
 }
 
