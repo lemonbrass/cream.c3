@@ -7,6 +7,7 @@ import utils;
 
 struct Build {
   String cmd;
+  String outfile;
   Target targ;
 }
 
@@ -31,7 +32,6 @@ fn Build! from_conf(Config* conf, String target) {
   StrList cmd;
   Target target_t = conf.targets.get(target)!;
   defer cmd.free();
-  defer outfile.free();
 
   create_build_dir(outfile[0..outfile.len-conf.project.name.len])!;
   cmd.push("c3c");
@@ -48,6 +48,7 @@ fn Build! from_conf(Config* conf, String target) {
   defer cmdstr.free();
   build_obj.cmd = cmdstr.copy_str();
   build_obj.targ = target_t;
+  build_obj.outfile = outfile;
   return build_obj;
 }
 
@@ -56,13 +57,14 @@ fn Build! new_temp(String tmpdir, StrList sources, String flags, String outfile)
   Target target_t;
   target_t.flags = flags;
   StrList cmd;
+  String fulloutfile = concat(tmpdir, path_str(), outfile);;
   defer cmd.free();
 
   create_build_dir(tmpdir)!;
   cmd.push("c3c");
   cmd.push("compile");
   cmd.push("-o");
-  cmd.push(outfile);
+  cmd.push(fulloutfile);
   cmd.push(target_t.flags);
 
   foreach (dir : sources) {
@@ -74,6 +76,7 @@ fn Build! new_temp(String tmpdir, StrList sources, String flags, String outfile)
   defer cmdstr.free();
   build_obj.cmd = cmdstr.copy_str();
   build_obj.targ = target_t;
+  build_obj.outfile = fulloutfile;
   return build_obj;
 }
 

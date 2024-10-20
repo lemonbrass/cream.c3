@@ -52,11 +52,17 @@ fn void! Test.run(&self) {
   }
   else {
     self.build_scripts()!;
+    String outfile = concat(".", path_str(), self.project.build_dir, path_str(), "tmp", path_str(), self.name);
+    defer outfile.free();
+    CInt res = libc::system((ZString) outfile);
+    if (res != 0) {
+      io::eprintfn("Script %s failed with exit code %s :(", outfile, res);
+    }
   }
 }
 
 fn void! Test.build_scripts(&self) {
-  String output = concat(self.project.build_dir, path_str(), "tmp", self.name);
+  String output = concat(self.project.build_dir, path_str(), "tmp");
   defer output.free();
   foreach (src : self.project.src_dirs.data) {
     self.sources.data.push(src);
