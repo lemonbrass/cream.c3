@@ -52,7 +52,7 @@ fn void! Test.run(&self) {
     }
   }
   else {
-    self.build_scripts()!;
+    if (catch err = self.build_scripts()) io::printfn("test failed to build: %s", err);
     String outfile = concat(".", path_str(), self.project.build_dir, path_str(), "tmp", path_str(), self.name);
     defer outfile.free();
     CInt res = libc::system((ZString) outfile);

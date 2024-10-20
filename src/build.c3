@@ -33,7 +33,7 @@ fn Build! from_conf(Config* conf, String target) {
   Target target_t = conf.targets.get(target)!;
   defer cmd.free();
 
-  create_build_dir(outfile[0..outfile.len-conf.project.name.len])!;
+  create_build_dir(outfile[0..outfile.len-conf.project.name.len-1])!;
   cmd.push("c3c");
   cmd.push("compile");
   cmd.push("-o");
@@ -89,11 +89,17 @@ fn void! create_build_dir(String dir) {
 fn PathList! files_in(String dir){
   Path dirpath = path::new(dir)!;
   dirpath = dirpath.new_absolute()!;
-  PathList files = path::new_ls(dirpath, true, true)!;
+  PathList! files = path::new_ls(dirpath, true, true);
+  if (catch err = files) {
+    if (err == IoError.FILE_NOT_DIR) {
+      PathList res;
+      res.push(dirpath);
+      return res;
+    }
+  }
   PathList absfiles;
   defer dirpath.free();
-  defer files.free();
-  foreach (path : files) {
+  foreach (path : files!) {
     DString pathstr;
     defer pathstr.free();
     pathstr.append_chars(dirpath.str_view());
@@ -101,5 +107,6 @@ fn PathList! files_in(String dir){
     pathstr.append_chars(path.str_view());
     absfiles.push(path::new(pathstr.str_view())!);
   }
+  files.free()!;
   return absfiles;
 }
