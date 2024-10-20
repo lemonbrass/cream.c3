@@ -4,43 +4,11 @@ import std::io;
 import toml;
 import utils;
 import test;
-
-const String PROJ_BUILD_DIR = "build/";
+import deps;
+import project;
 
 def TargetMap = Map(<String, Target>);
-def ExternCList = List(<External_C>);
-def ExternC3List = List(<External_C3>);
 
-
-struct External_C3 {
-  String name;        // required
-  String url;         // required
-  String commit_id;   // required
-  TomlList libs;
-  String clone_flags;
-  String build_opt;
-  bool force_link;
-}
-
-struct External_C {
-  String name;        // required
-  String url;         // required
-  String commit_id;   // required
-  String build_cmd;   // required
-  TomlList libs;      // required
-  String output_dir;  // defaults to build
-  String clone_flags;
-  bool link_switch;   // defaults to false
-}
-
-struct Project {
-  String name;
-  String author;
-  String description;
-  String version;
-  String build_dir;
-  TomlList src_dirs;
-}
 
 struct Target {
   String flags;
@@ -51,9 +19,9 @@ struct Target {
 struct Config {
   Project project;
   TargetMap targets;
-  ExternCList ext_c;
-  ExternC3List ext_c3;
   TestMap tests;
+  ExternCMap ext_c;
+  ExternC3Map ext_c3;
 }
 
 fault ConfigError {
@@ -86,26 +54,11 @@ fn String! readfile(String file){
 }
 
 fn void! Config.read_toml(&self, TomlFile* file) {
-  self.read_project(file)!;
+  self.project = project::read_project(file)!;
   self.read_targets(file)!;
   self.tests = test::read_tests(file.get_subsections("test"), self.project)!;
 }
 
-fn void! Config.read_project(&self, TomlFile* file) {
-  String name = file.get_val("project", "name")!;
-  String desc = file.get_val("project", "description")!;
-  String vers = file.get_val("project", "version")!;
-  String author = file.get_val("project", "author")!;
-  String src_dirs = file.get_val("project", "sources")!;
-  String! errbuild_dir = file.get_val("project", "build-directory");
-  StringOpt build_dir = utils::@from_err(errbuild_dir);
-  self.project.build_dir = build_dir.get_def("build/").path_strip();
-  self.project.name = name;
-  self.project.description = desc;
-  self.project.author = author;
-  self.project.version = vers;
-  self.project.src_dirs.read(src_dirs)!;
-}
 
 fn void! Config.read_targets(&self, TomlFile* file) {
   SectionList sections = file.get_subsections("target");
@@ -136,47 +89,26 @@ fn void Config.print(&self) {
   };
 }
 
-fn void Project.free(&self) {
-  self.name.free();
-  self.author.free();
-  self.description.free();
-  self.src_dirs.free();
-}
-
 fn void Target.free(&self) {
   self.flags.free();
   self.build_cmd.str.free();
   self.afterbuild_cmd.str.free();
 }
 
-fn void External_C.free(&self) {
-  self.name.free();      
-  self.url.free();
-  self.commit_id.free(); 
-  self.build_cmd.free(); 
-  self.libs.free();     
-  self.output_dir.free();
-  self.clone_flags.free();
-}
-
-fn void External_C3.free(&self) {
-  self.name.free();      
-  self.url.free();
-  self.commit_id.free(); 
-  self.build_opt.free(); 
-  self.libs.free();     
-  self.clone_flags.free();
-}
-
 fn void Config.free(&self) {
+  self.tests.@each(; String key, Test val) {
+    val.free();
+  };
   self.targets.@each(; String key, Target val) {
     val.free();
   };
-  self.tests.@each(;String name, Test test) {
-    test.free();
+  self.ext_c.@each(; String name, External_C ext_c) {
+    ext_c.free();
   };
-  foreach (ext_c : self.ext_c) ext_c.free();
-  foreach (ext_c3 : self.ext_c3) ext_c3.free();
+  self.ext_c3.@each(; String name, External_C3 ext_c3) {
+    ext_c3.free();
+  };
+  self.project.free();
   self.targets.free();
   self.ext_c.free();
   self.ext_c3.free();

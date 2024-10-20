@@ -1,6 +1,6 @@
 module main;
 import std::io;
-import projutil;
+import project;
 import tomlmake;
 import arga;
 import toml;
@@ -12,7 +12,7 @@ Config conf;
 const String CONFIG_FILE = "cream.toml";
 
 fn bool setup_args(String[] args) {
-  ArgLike create_project = arga::make_arg_opt("create", "Make project", &projutil::create_proj);
+  ArgLike create_project = arga::make_arg_opt("create", "Make project", &project::create_proj);
   ArgLike*[] list = { &create_project };
   defer arga::free_args(list);
 

@@ -1,4 +1,4 @@
-module projutil;
+module project;
 import std::io;
 import main;
 import config;

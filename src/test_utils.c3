@@ -5,6 +5,7 @@ import std::io;
 import libc;
 import config;
 import utils;
+import project;
 import build;
 
 const String META_TEST_FLAGS = "-z '-e %s' "; // define custom startup func
