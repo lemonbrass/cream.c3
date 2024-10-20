@@ -3,6 +3,7 @@ import std::collections;
 import std::io;
 import toml;
 import utils;
+import test;
 
 const String PROJ_BUILD_DIR = "build/";
 
@@ -26,7 +27,7 @@ struct External_C {
   String url;         // required
   String commit_id;   // required
   String build_cmd;   // required
-  TomlList libs;       // required
+  TomlList libs;      // required
   String output_dir;  // defaults to build
   String clone_flags;
   bool link_switch;   // defaults to false
@@ -38,7 +39,6 @@ struct Project {
   String description;
   String version;
   String build_dir;
-  
   TomlList src_dirs;
 }
 
@@ -53,6 +53,7 @@ struct Config {
   TargetMap targets;
   ExternCList ext_c;
   ExternC3List ext_c3;
+  TestList tests;
 }
 
 fault ConfigError {
@@ -87,6 +88,7 @@ fn String! readfile(String file){
 fn void! Config.read_toml(&self, TomlFile* file) {
   self.read_project(file)!;
   self.read_targets(file)!;
+  self.tests = test::read_tests(file.get_subsections("test"))!;
 }
 
 fn void! Config.read_project(&self, TomlFile* file) {
@@ -120,9 +122,18 @@ fn void! Config.read_targets(&self, TomlFile* file) {
 
 fn void Config.print(&self) {
   io::printfn("%s {author: %s, desc: %s, vers: %s, src: %s}", self.project.name, self.project.author, self.project.description, self.project.version, self.project.src_dirs.data);
+
   self.targets.@each(; String name, Target t) {
     io::printfn("target %s: %s", name, t.flags);
   };
+  
+  foreach (test : self.tests) {
+    if (test.type == COMMAND) {
+      io::printfn("Test %s: %s, %s", test.name, test.type, test.cmd);
+    } else {
+      io::printfn("Test %s: %s, %s", test.name, test.type, test.sources.data);
+    }
+  }
 }
 
 fn void Project.free(&self) {
@@ -158,13 +169,14 @@ fn void External_C3.free(&self) {
 }
 
 fn void Config.free(&self) {
-  self.project.free();
   self.targets.@each(; String key, Target val) {
     val.free();
   };
   foreach (ext_c : self.ext_c) ext_c.free();
   foreach (ext_c3 : self.ext_c3) ext_c3.free();
+  foreach (test : self.tests) test.free();
   self.targets.free();
   self.ext_c.free();
   self.ext_c3.free();
+  self.project.free();
 }

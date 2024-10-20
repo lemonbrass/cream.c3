@@ -267,27 +267,6 @@ fn SectionList TomlFile.get_subsections(&self, String of) {
   return sections;
 }
 
-/*
-fn void! TomlList.read(&self, String list) {
-  list = list[1..]; // skip [
-  bool was_str;
-  bool is_str;
-  DString buff;
-  defer buff.free();
-  foreach (ch : list) {
-    if (ch == ',' || ch == ']') {
-      self.data.push(buff.copy_str());
-      buff.clear();
-    }
-    if (!is_str && ch == '"') {
-      is_str = true;
-      was_str = true;
-    }
-    if (is_str && ch == '"') is_str = false;
-    if (is_str || !was_str) buff.append_char(ch);
-  }
-}
-*/
 
 fn void! TomlList.read(&self, String list) {
   list = list[1..];

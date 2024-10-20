@@ -13,6 +13,14 @@ after-build = "echo 'built'"
 [target.debug]
 flags = "-O0 -g"
 
+[test.mycmd]
+type = "command"
+command = "echo 'testing, 1 2 3, OK, yeah'"
+
+[test.mysrc]
+type = "script"
+sources = [ "some test files" ]
+
 "
 # external c projects can be added easily just by:
 # 
