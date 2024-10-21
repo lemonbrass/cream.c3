@@ -1,5 +1,6 @@
 module install;
 import std::collections, std::io;
+import config;
 import utils;
 import libc;
 import toml;
@@ -23,7 +24,7 @@ fn InstallPreset! read_toml(TomlSection* install) {
   InstallPreset installer;
   DString! overridecmd = install.find_val("for-all");
   if (try overridecmd) {
-    installer.override_cmd.str = overridecmd.copy_str();
+    installer.override_cmd.data = overridecmd.copy_str();
     installer.override_cmd.valid = true;
     return installer;
   }

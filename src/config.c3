@@ -7,9 +7,10 @@ import test;
 import deps;
 import project;
 import install;
+import optional;
 
 def TargetMap = Map(<String, Target>);
-
+def StringOpt = Optional(<String>);
 
 struct Target {
   String flags;
@@ -61,16 +62,15 @@ fn void! Config.read_toml(&self, TomlFile* file) {
   self.tests = test::read_tests(file.get_subsections("test"), self.project)!;
 }
 
-
 fn void! Config.read_targets(&self, TomlFile* file) {
   SectionList sections = file.get_subsections("target");
   foreach (sec : sections) {
     Target target;
     target.flags = sec.find_val("flags").copy_str()!;
     DString! cmd = sec.find_val("before-build");
-    target.build_cmd = utils::@from_dstr_err(cmd);
+    target.build_cmd.@unwrap(cmd.copy_str());
     cmd = sec.find_val("after-build");
-    target.afterbuild_cmd = utils::@from_dstr_err(cmd);
+    target.afterbuild_cmd.@unwrap(cmd.copy_str());
     self.targets.set(sec.name.str_view(), target);
   }
 }
@@ -93,8 +93,8 @@ fn void Config.print(&self) {
 
 fn void Target.free(&self) {
   self.flags.free();
-  self.build_cmd.str.free();
-  self.afterbuild_cmd.str.free();
+  self.build_cmd.free();
+  self.afterbuild_cmd.free();
 }
 
 fn void Config.free(&self) {

@@ -15,14 +15,14 @@ fn void! Build.build(&buildobj) {
   StringOpt beforebuild = buildobj.targ.build_cmd;
   StringOpt afterbuild = buildobj.targ.afterbuild_cmd;
   if (beforebuild.valid) {
-    io::printfn("Running before-build command: %s", beforebuild.str);
-    libc::system((ZString)beforebuild.str);
+    io::printfn("Running before-build command: %s", beforebuild.data);
+    libc::system((ZString)beforebuild.data);
   }
   io::printfn("Building: %s", buildobj.cmd);
   libc::system((ZString)buildobj.cmd);
   if (afterbuild.valid) {
-    io::printfn("Running after-build command: %s", afterbuild.str);
-    libc::system((ZString)afterbuild.str);
+    io::printfn("Running after-build command: %s", afterbuild.data);
+    libc::system((ZString)afterbuild.data);
   }
 }
 

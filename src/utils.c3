@@ -1,38 +1,10 @@
 module utils;
 
-struct StringOpt {
-  bool valid;
-  String str;
-}
-
-fn String StringOpt.get_def(&self, String com) {
-  if (self.valid) return self.str;
-  return com;
-}
-
-fn String* StringOpt.get(&self) {
-  if (self.valid) return &self.str;
-  return null;
-}
-
-macro StringOpt @from_err(#err) {
-  if (catch #err) return {false, ""};
-  return {true, #err!!};
-}
-
-macro StringOpt @from_dstr_err(#err) {
-  if (catch #err) return {false, ""};
-  return {true, #err!!.copy_str()};
-}
-
-fn void StringOpt.free(&self) {
-  if (self.valid) self.str.free();
-}
 
 fn String concat(String... operands) @builtin {
   DString res;
   defer res.free();
-  foreach (str : operands) res.append_chars(str);
+  foreach (data : operands) res.append_chars(data);
   return res.copy_str();
 }
 

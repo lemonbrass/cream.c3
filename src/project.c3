@@ -1,5 +1,6 @@
 module project;
 import toml;
+import config;
 import utils;
 
 const String PROJ_BUILD_DIR = "build/";
@@ -21,7 +22,8 @@ fn Project! read_project(TomlFile* file) {
   proj.author = file.get_val("project", "author")!;
   String src_dirs = file.get_val("project", "sources")!;
   String! errbuild_dir = file.get_val("project", "build-directory");
-  StringOpt build_dir = utils::@from_err(errbuild_dir);
+  StringOpt build_dir;
+  build_dir.@from_err(errbuild_dir);
   proj.build_dir = build_dir.get_def("build/").path_strip();
   proj.src_dirs.read(src_dirs)!;
   return proj;
