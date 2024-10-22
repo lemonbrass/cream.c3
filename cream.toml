@@ -23,7 +23,14 @@ sources = [ "tests" ]
 
 [install]
 for-all = "cp ./build/cream ~/.bin/cream"
-"
+
+[extern-c.ahaha]
+build-command = "cmake --build --/build/"
+url = "gitown.com/ahaha"
+commit-id = "69"
+clone-flags = "--depth=1"
+libs = ["mylib"]
+
 # external c projects can be added easily just by:
 # 
 # [external.c.projname]

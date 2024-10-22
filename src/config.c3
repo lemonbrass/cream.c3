@@ -22,8 +22,7 @@ struct Config {
   Project project;
   TargetMap targets;
   TestMap tests;
-  ExternCMap ext_c;
-  ExternC3Map ext_c3;
+  ExternDepsMap ext_deps;
   InstallPreset install;
 }
 
@@ -60,6 +59,7 @@ fn void! Config.read_toml(&self, TomlFile* file) {
   self.project = project::read_project(file)!;
   self.read_targets(file)!;
   self.tests = test::read_tests(file.get_subsections("test"), self.project)!;
+  self.ext_deps.read_c(file)!;
 }
 
 fn void! Config.read_targets(&self, TomlFile* file) {
@@ -80,6 +80,10 @@ fn void Config.print(&self) {
 
   self.targets.@each(; String name, Target t) {
     io::printfn("target %s: %s", name, t.flags);
+  };
+
+  self.ext_deps.@each(; String hash, ExternDep t) {
+    io::printfn("Dependency %s: %s & %s", t.name, t.type, t.hash);
   };
   
   self.tests.@each(; String name, Test test) {
@@ -104,16 +108,12 @@ fn void Config.free(&self) {
   self.targets.@each(; String key, Target val) {
     val.free();
   };
-  self.ext_c.@each(; String name, External_C ext_c) {
+  self.ext_deps.@each(; String name, ExternDep ext_c) {
     ext_c.free();
-  };
-  self.ext_c3.@each(; String name, External_C3 ext_c3) {
-    ext_c3.free();
   };
   self.project.free();
   self.targets.free();
-  self.ext_c.free();
-  self.ext_c3.free();
+  self.ext_deps.free();
   self.project.free();
   self.install.free();
 }
