@@ -32,7 +32,7 @@ clone-flags = "--depth=1"
 libs = ["mylib"]
 
 # external c projects can be added easily just by:
-# 
+6 
 # [external.c.projname]
 # url = "git url"
 # git_flags = "git clone flags"
@@ -56,6 +56,5 @@ libs = ["mylib"]
 # build = "--/bin/"
 # use = [.... snip]
 # link = true
-
 
 

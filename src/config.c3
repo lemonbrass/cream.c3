@@ -11,6 +11,7 @@ import optional;
 
 def TargetMap = Map(<String, Target>);
 def StringOpt = Optional(<String>);
+def InstallerOpt = Optional(<InstallPreset>);
 
 struct Target {
   String flags;
@@ -23,7 +24,7 @@ struct Config {
   TargetMap targets;
   TestMap tests;
   ExternDepsMap ext_deps;
-  InstallPreset install;
+  InstallerOpt install;
 }
 
 fault ConfigError {
@@ -42,7 +43,8 @@ fn Config! load(String data) {
   TomlFile parsed = toml::parse_toml(data)!;
   defer parsed.free();
   conf.read_toml(&parsed)!;
-  conf.install = install::read_toml(&&parsed.find_section("install")!)!;
+  InstallPreset! install = install::read_toml(&&parsed.find_section("install")!);
+  conf.install.@unwrap(install);
   return conf;  
 }
 

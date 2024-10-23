@@ -22,6 +22,18 @@ fn void! create_proj(ArgLike* arg) {
   io::printfn("Generated project %s, you should probably add a better description", projname);
 }
 
+fn void! init_proj(ArgLike* arg) {
+  DString gen_toml;
+  String projname = ask_ques(&gen_toml)!;
+  Path path = path::new(projname)!;
+  defer path.free();
+  path::mkdir(path)!;
+  defer projname.free();
+  write_toml(".", &gen_toml)!;
+  build_filetree(".", gen_toml.str_view())!;
+  io::printfn("Initialized project %s successfully!", projname);
+}
+
 fn String! ask_ques(DString* gen_toml) {
   io::printn("I will ask you a couple of questions for generating project.");
   String projname = prompt("What's the project name: ")!; 
@@ -40,12 +52,6 @@ fn String! ask_ques(DString* gen_toml) {
 fn void! write_toml(String projname, DString* gen_toml) {
   DString buff;
   defer buff.free();
-  Path relpath = path::new(projname)!;
-  Path path = relpath.new_absolute()!;
-  defer path.free();
-  defer relpath.free();
-  path::mkdir(path)!;
-  
   buff.appendf("%s%ccream.toml", projname, path_ch());
   File cream_conf = file::open(buff.str_view(), "w")!;
   cream_conf.write(gen_toml.str_view())!;

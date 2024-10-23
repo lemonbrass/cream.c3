@@ -13,7 +13,8 @@ const String CONFIG_FILE = "cream.toml";
 
 fn bool setup_args(String[] args) {
   ArgLike create_project = arga::make_arg_opt("create", "Make project", &project::create_proj);
-  ArgLike*[] list = { &create_project };
+  ArgLike init_project = arga::make_arg_opt("init", "Initialize project in cwd", &project::init_proj);
+  ArgLike*[] list = { &create_project, &init_project };
   defer arga::free_args(list);
 
   if (catch err = arga::argparse(args, list)){
@@ -34,7 +35,7 @@ fn void! ontest(ArgLike* arg) {
 }
 
 fn void! oninstall(ArgLike* arg) {
-  conf.install.install()!;
+  if (conf.install.valid) conf.install.data.install()!;
 }
 
 fn bool setup_conf_args(String[] args) {
@@ -62,7 +63,6 @@ fn int main(String[] args)
   {
     conf = config::load_file(CONFIG_FILE)!!;
     setup_conf_args(args);
-    conf.print();
     conf.free();
   }
   return 0;
